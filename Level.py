@@ -5,10 +5,24 @@ import pygame
 
 
 class Level():
-    """DOC"""
+    """A level class used for making RPG 'levels' (screens) that will handle collision and interactions from the
+    objects and blocks on screen.
+
+    Attributes:
+        spritesheet: must be of type pygame.image converted to a per-pixel alpha surface; the spritesheet containing
+        all the tiles, items, enemies, and player animations.
+
+        block_width: must be int; the width (in pixels) of one column or 'block' of the spritesheet.
+        sheet_width: must be int; the width (in pixels) of the entire spritesheet. (ex: an 8 column spritesheet with
+        each column 32 pixels wide would need to have a width of 256)
+
+        bg_array: must be a two dimensional array containing all the tileset numbers for the background layer.
+        fg_array: must be a two dimensional array containing all the tileset numbers for the foreground layer.
+    """
 
     def __init__(self, spritesheet, block_width, sheet_width, bg_array, fg_array):
-        """DOC"""
+        """Initializes the level attributes, and fabricates an array of collision 'blocks' based off the blocks in
+        the fg_array."""
 
         self.spritesheet = spritesheet
 
@@ -42,14 +56,8 @@ class Level():
             Gets and returns the desired block from a spritesheet, given the corresponding number.
 
             Parameters:
-                sheet: must be an object of the Spritesheet class; the spritesheet containing the blocks.
-
-                width:  must be an int equal to the width of a column; the width of the block.
-                height: must be an int equal to the height of a row; the height of the block.
-
-                num: must be an int no grater than the number of different blocks; the number corresponding to the block type.
-
-                columns: must be an int equal to the number of columns in the spritesheet; the number of columns in the sheet.
+                number: must be an int no grater than the number of different blocks (tiles in the spritesheet);
+                the number corresponding to the block type.
 
             Returns: pygame.surface with size equal to width and height; the image of the block
             """
@@ -73,37 +81,59 @@ class Level():
             return None  # Don't return an image
 
     def draw_bg(self, surface):
-        """DRAWS THE BACKGROUND ARRAY AS THE CORRESPONDING BLOCKS"""
+        """
+        Draws the blocks in the background layer, based on the numbers in self.bg_array.
 
+        Parameters:
+            surface: must be of type pygame.surface; the screen  surface to blit to.
+
+        Returns: (nothing) -- draws the background layer to the screen surface.
+        """
+
+        # get the width and height of the array
         height = len(self.bg_array)
         width = len(self.bg_array[0])
 
+        # go through each tile in the array
         for row in range(height):
             for column in range(width):
 
+                # get the tile that corresponds to the current position's number
                 current_tile = self.get_tile(self.bg_array[row][column])
 
-                if current_tile is not None:
+                if current_tile is not None:  # a tile is to be drawn at the current location
 
+                    # convert the position in the array to x and y coordinates
                     x = self.block_width * column
                     y = self.block_width * row
 
-                    surface.blit(current_tile, (x, y))
+                    surface.blit(current_tile, (x, y))  # blit the tile to the screen position
 
     def draw_fg(self, surface):
-        """DRAWS THE FOREGROUND ARRAY AS THE CORRESPONDING BLOCKS"""
+        """
+        Draws the blocks in the foreground layer, based on the numbers in self.fg_array.
 
+        Parameters:
+            surface: must be of type pygame.surface; the screen  surface to blit to.
+
+        Returns: (nothing) -- draws the foreground layer to the screen surface.
+        """
+
+        # get the width and height of the array
         height = len(self.fg_array)
         width = len(self.fg_array[0])
 
+        # go through each tile in the array
         for row in range(height):
             for column in range(width):
 
+                # get the tile that corresponds to the current position's number
                 current_tile = self.get_tile(self.fg_array[row][column])
 
-                if current_tile is not None:
+                if current_tile is not None:  # a tile is to be drawn at the current location
 
+                    # convert the position in the array to x and y coordinates
                     x = self.block_width * column
                     y = self.block_width * row
 
-                    surface.blit(current_tile, (x, y))
+                    surface.blit(current_tile, (x, y))  # blit the tile to the screen position
