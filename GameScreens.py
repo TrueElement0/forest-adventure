@@ -1,8 +1,8 @@
 # Main Game Screens
 # Mason Kury
 
-import pygame
 from Level import *
+from Entity import *
 
 
 def forest_entrance(screen, clock, spritesheet):
@@ -413,4 +413,4 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
 
     spritesheet = pygame.image.load("Images/spritesheet.png").convert_alpha()
-    cave(screen, clock, spritesheet)
+    forest_entrance(screen, clock, spritesheet)

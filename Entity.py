@@ -17,13 +17,13 @@ def get_frames(spritesheet, strip_rect, frame_width):
 
     for current_frame in range(num_frames):
         frame = pygame.Surface(frame_rects[current_frame].size, pygame.SRCALPHA)
-        frame.blit(spritesheet, (0,0), frame_rects[current_frame])
+        frame.blit(spritesheet, (0, 0), frame_rects[current_frame])
         frames.append(frame)
 
     return frames
 
 
-class Inventory():
+class Inventory:
     """
     DOC
     """
@@ -112,15 +112,13 @@ class Arrow:
         """
 
 
-
 class Player:
     """
     DOC
     """
 
-    def __init__(self, spritesheet, move_speed, dodge_distance, hitbox, sword_swing, direction, health, total_frames):
+    def __init__(self, move_speed, dodge_distance, hitbox, sword_swing, direction, health, total_frames):
         """DOC"""
-        self.spritesheet = spritesheet
         self.move_speed = move_speed
         self.dodge_distance = dodge_distance
         self.hitbox = hitbox
@@ -213,4 +211,91 @@ class Enemy():
     """
     DOC
     """
+    def __init__(self, number, enemy_type, move_speed, hitbox, sight_distance, sight_width, direction, total_frames):
+        """DOC"""
+        self.number = number
+        self.enemy_type = enemy_type
+        self.move_speed = move_speed
+        self.hitbox = hitbox
+        self.sight_distance = sight_distance
+        self.sight_width = sight_width
+        self.direction = direction
 
+        self.current_frame = 0
+        self.total_frames = total_frames
+
+        self.sight_rect = None
+        self.align_sight()
+
+    def align_sight(self):
+        """
+        DOC
+        """
+
+        center_x = self.hitbox.x + (self.hitbox.width // 2)
+        center_y = self.hitbox.y + (self.hitbox.height // 2)
+
+        if self.direction == "up":
+            height = self.sight_distance
+            width = self.sight_width
+
+            self.sight_rect = pygame.Rect(center_x - (width // 2), self.hitbox.y - height, width, height)
+
+        elif self.direction == "down":
+            height = self.sight_distance
+            width = self.sight_width
+
+            self.sight_rect = pygame.Rect(center_x - (width // 2), self.hitbox.y + self.hitbox.height, width, height)
+
+        elif self.direction == "left":
+            width = self.sight_distance
+            height = self.sight_width
+
+            self.sight_rect = pygame.Rect(self.hitbox.x - width, center_y - (height // 2), width, height)
+
+        elif self.direction == "right":
+            width = self.sight_distance
+            height = self.sight_width
+
+            self.sight_rect = pygame.Rect(self.hitbox.x + self.hitbox.width, center_y - (height // 2), width, height)
+
+    def animate(self, screen, frames_list, stop=None):
+        """
+        DOC
+        """
+        if stop is not None:
+            if self.current_frame <= self.total_frames:
+                self.current_frame += 1
+            else:
+                self.current_frame = 0
+
+        else:
+            self.current_frame = 0
+
+        screen.blit(frames_list[self.current_frame])
+
+    def move(self, path=None):
+        """
+        DOC
+        """
+        if path is not None:
+            self.direction = path[0]
+            del path[0]
+
+        self.align_sight()
+
+        if self.direction == "up":
+            self.hitbox.y -= self.move_speed
+        elif self.direction == "down":
+            self.hitbox.y += self.move_speed
+        elif self.direction == "left":
+            self.hitbox.x -= self.move_speed
+        elif self.direction == "right":
+            self.hitbox.x += self.move_speed
+
+    def chase(self, player):
+        """
+        DOC
+        """
+        x_distance = player.hitbox.x - self.hitbox.x
+        y_distance = player.hitbox.y - self.hitbox.y
