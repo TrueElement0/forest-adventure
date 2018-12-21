@@ -5,7 +5,7 @@ from Level import *
 from Entity import *
 
 
-def forest_entrance(screen, clock, spritesheet):
+def forest_entrance(screen, clock, spritesheet, player):
     """SCREEN 1"""
 
     bg_array = [
@@ -56,13 +56,62 @@ def forest_entrance(screen, clock, spritesheet):
 
     forest_entrance = Level(spritesheet, 32, 256, bg_array, fg_array)
 
+    player.hitbox.x = 704
+    player.hitbox.y = 608
+
+    current_frame = player.animate(True)
+
+    walking_animation_timer = pygame.USEREVENT+1
+    walking_movement_timer = pygame.USEREVENT+2
+
     done = False
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
+
+            if event.type == walking_animation_timer:
+                current_frame = player.animate()
+
+            if event.type == walking_movement_timer:
+                player.move()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    player.direction = "up"
+                    current_frame = player.animate()
+                    pygame.time.set_timer(walking_movement_timer, 50)
+                    pygame.time.set_timer(walking_animation_timer, 200)
+
+                elif event.key == pygame.K_DOWN:
+                    player.direction = "down"
+                    current_frame = player.animate()
+                    pygame.time.set_timer(walking_movement_timer, 50)
+                    pygame.time.set_timer(walking_animation_timer, 200)
+
+                elif event.key == pygame.K_RIGHT:
+                    player.direction = "right"
+                    current_frame = player.animate()
+                    pygame.time.set_timer(walking_movement_timer, 50)
+                    pygame.time.set_timer(walking_animation_timer, 200)
+
+                elif event.key == pygame.K_LEFT:
+                    player.direction = "left"
+                    current_frame = player.animate()
+                    pygame.time.set_timer(walking_movement_timer, 50)
+                    pygame.time.set_timer(walking_animation_timer, 200)
+
+                elif event.key == pygame.K_LSHIFT:
+                    player.dodge()
+
+            if event.type == pygame.KEYUP:
+                current_frame = player.animate(True)
+                pygame.time.set_timer(walking_movement_timer, 0)
+                pygame.time.set_timer(walking_animation_timer, 0)
+
         screen.fill((255, 255, 255))
         forest_entrance.draw_bg(screen)
+        screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         forest_entrance.draw_fg(screen)
         clock.tick(60)
         pygame.display.flip()
@@ -70,7 +119,7 @@ def forest_entrance(screen, clock, spritesheet):
     pygame.quit()
 
 
-def southwestern_forest(screen, clock, spritesheet):
+def southwestern_forest(screen, clock, spritesheet, player):
     """SCREEN 2"""
 
     bg_array = [
@@ -135,7 +184,7 @@ def southwestern_forest(screen, clock, spritesheet):
     pygame.quit()
 
 
-def eastern_forest(screen, clock, spritesheet, has_bow):
+def eastern_forest(screen, clock, spritesheet, player, has_bow):
     """SCREEN 3"""
 
     bg_array = [
@@ -206,7 +255,7 @@ def eastern_forest(screen, clock, spritesheet, has_bow):
     pygame.quit()
 
 
-def northern_forest(screen, clock, spritesheet):
+def northern_forest(screen, clock, spritesheet, player):
     """SCREEN 4"""
 
     bg_array = [
@@ -271,7 +320,7 @@ def northern_forest(screen, clock, spritesheet):
     pygame.quit()
 
 
-def western_forest(screen, clock, spritesheet):
+def western_forest(screen, clock, spritesheet, player):
     """SCREEN 5"""
 
     bg_array = [
@@ -336,7 +385,7 @@ def western_forest(screen, clock, spritesheet):
     pygame.quit()
 
 
-def cave(screen, clock, spritesheet):
+def cave(screen, clock, spritesheet, player):
     """SCREEN 6"""
 
     bg_array = [
@@ -413,4 +462,14 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
 
     spritesheet = pygame.image.load("Images/spritesheet.png").convert_alpha()
-    forest_entrance(screen, clock, spritesheet)
+    player_south_sword_walking = get_frames(spritesheet, (0, 128, 128, 32), 32)
+    player_north_sword_walking = get_frames(spritesheet, (128, 128, 128, 32), 32)
+    player_east_sword_walking = get_frames(spritesheet, (0, 160, 128, 32), 32)
+    player_west_sword_walking = get_frames(spritesheet, (128, 160, 128, 32), 32)
+
+    animations = [player_north_sword_walking, player_south_sword_walking,
+                  player_west_sword_walking, player_east_sword_walking]
+
+    player = Player(7, 20, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), "up", 5, animations)
+
+    forest_entrance(screen, clock, spritesheet, player)

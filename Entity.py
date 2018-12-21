@@ -8,9 +8,9 @@ def get_frames(spritesheet, strip_rect, frame_width):
     """
     DOC
     """
-    num_frames = (strip_rect.x // frame_width) * strip_rect.y // frame_width
+    num_frames = (strip_rect[2] // frame_width) * strip_rect[3] // frame_width
 
-    frame_rects = [pygame.Rect(strip_rect[0] + strip_rect[2] * x, strip_rect[1], strip_rect[2], strip_rect[3])
+    frame_rects = [pygame.Rect(strip_rect[0] + frame_width * x, strip_rect[1], frame_width, frame_width)
                    for x in range(num_frames)]
 
     frames = []
@@ -117,7 +117,7 @@ class Player:
     DOC
     """
 
-    def __init__(self, move_speed, dodge_distance, hitbox, sword_swing, direction, health, total_frames):
+    def __init__(self, move_speed, dodge_distance, hitbox, sword_swing, direction, health, animations):
         """DOC"""
         self.move_speed = move_speed
         self.dodge_distance = dodge_distance
@@ -127,16 +127,17 @@ class Player:
         self.health = health
 
         self.current_frame = 0
-        self.total_frames = total_frames
+        self.animations = animations
+        self.total_frames = len(self.animations[0])
 
         self.inventory = Inventory()
 
-    def animate(self, screen, frames_list, stop=None):
+    def animate(self, stop=None):
         """
         DOC
         """
-        if stop is not None:
-            if self.current_frame <= self.total_frames:
+        if stop is None:
+            if self.current_frame < self.total_frames - 1:
                 self.current_frame += 1
             else:
                 self.current_frame = 0
@@ -144,7 +145,15 @@ class Player:
         else:
             self.current_frame = 0
 
-        screen.blit(frames_list[self.current_frame])
+        if self.inventory.current_item == "sword":
+            if self.direction == "up":
+                return self.animations[0][self.current_frame]
+            elif self.direction == "down":
+                return self.animations[1][self.current_frame]
+            elif self.direction == "left":
+                return self.animations[2][self.current_frame]
+            elif self.direction == "right":
+                return self.animations[3][self.current_frame]
 
     def sword_attack(self, enemies_list):
         """
@@ -207,7 +216,7 @@ class Player:
             self.hitbox.x += self.dodge_distance
 
 
-class Enemy():
+class Enemy:
     """
     DOC
     """
