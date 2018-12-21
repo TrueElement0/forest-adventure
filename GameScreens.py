@@ -63,6 +63,11 @@ def forest_entrance(screen, clock, spritesheet, player):
 
     walking_animation_timer = pygame.USEREVENT+1
     walking_movement_timer = pygame.USEREVENT+2
+    check_keypresses_timer = pygame.USEREVENT+3
+
+    pygame.time.set_timer(check_keypresses_timer, 5)
+
+    arrow_keys = {"up": False, "down": False, "right": False, "left": False}
 
     done = False
     while not done:
@@ -76,43 +81,76 @@ def forest_entrance(screen, clock, spritesheet, player):
             if event.type == walking_movement_timer:
                 player.move()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
+            if event.type == check_keypresses_timer:
+
+                keys_pressed = pygame.key.get_pressed()
+
+                if keys_pressed[pygame.K_UP]:
                     player.direction = "up"
-                    current_frame = player.animate()
-                    pygame.time.set_timer(walking_movement_timer, 50)
-                    pygame.time.set_timer(walking_animation_timer, 200)
 
-                elif event.key == pygame.K_DOWN:
+                    if not arrow_keys["up"]:
+                        current_frame = player.animate()
+                        pygame.time.set_timer(walking_movement_timer, 50)
+                        pygame.time.set_timer(walking_animation_timer, 200)
+                        arrow_keys["up"] = True
+
+                elif keys_pressed[pygame.K_DOWN]:
                     player.direction = "down"
-                    current_frame = player.animate()
-                    pygame.time.set_timer(walking_movement_timer, 50)
-                    pygame.time.set_timer(walking_animation_timer, 200)
 
-                elif event.key == pygame.K_RIGHT:
+                    if not arrow_keys["down"]:
+                        current_frame = player.animate()
+                        pygame.time.set_timer(walking_movement_timer, 50)
+                        pygame.time.set_timer(walking_animation_timer, 200)
+                        arrow_keys["down"] = True
+
+                elif keys_pressed[pygame.K_RIGHT]:
                     player.direction = "right"
-                    current_frame = player.animate()
-                    pygame.time.set_timer(walking_movement_timer, 50)
-                    pygame.time.set_timer(walking_animation_timer, 200)
 
-                elif event.key == pygame.K_LEFT:
+                    if not arrow_keys["right"]:
+                        current_frame = player.animate()
+                        pygame.time.set_timer(walking_movement_timer, 50)
+                        pygame.time.set_timer(walking_animation_timer, 200)
+                        arrow_keys["right"] = True
+
+                elif keys_pressed[pygame.K_LEFT]:
                     player.direction = "left"
-                    current_frame = player.animate()
-                    pygame.time.set_timer(walking_movement_timer, 50)
-                    pygame.time.set_timer(walking_animation_timer, 200)
 
-                elif event.key == pygame.K_LSHIFT:
+                    if not arrow_keys["left"]:
+                        current_frame = player.animate()
+                        pygame.time.set_timer(walking_movement_timer, 50)
+                        pygame.time.set_timer(walking_animation_timer, 200)
+                        arrow_keys["left"] = True
+
+                if not keys_pressed[pygame.K_UP]:
+                    arrow_keys["up"] = False
+
+                if not keys_pressed[pygame.K_DOWN]:
+                    arrow_keys["down"] = False
+
+                if not keys_pressed[pygame.K_RIGHT]:
+                    arrow_keys["right"] = False
+
+                if not keys_pressed[pygame.K_LEFT]:
+                    arrow_keys["left"] = False
+
+                if not arrow_keys["up"] and not arrow_keys["down"] \
+                   and not arrow_keys["right"] and not arrow_keys["left"]:
+
+                    pygame.time.set_timer(walking_movement_timer, 0)
+                    pygame.time.set_timer(walking_animation_timer, 0)
+                    player.animate(True)
+
+            # keys that should only register once when pressed
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LALT:
                     player.dodge()
-
-            if event.type == pygame.KEYUP:
-                current_frame = player.animate(True)
-                pygame.time.set_timer(walking_movement_timer, 0)
-                pygame.time.set_timer(walking_animation_timer, 0)
 
         screen.fill((255, 255, 255))
         forest_entrance.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         forest_entrance.draw_fg(screen)
+        pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
+        pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
         clock.tick(60)
         pygame.display.flip()
 
