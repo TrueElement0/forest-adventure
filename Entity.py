@@ -137,6 +137,11 @@ class Player:
 
         self.inventory = Inventory()
 
+    def align_sword_swing(self):
+        """DOC"""
+        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
+        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+
     def animate(self, stop=None):
         """
         DOC
@@ -207,8 +212,7 @@ class Player:
         elif self.direction == "right":
             self.hitbox.x += self.move_speed
 
-        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
-        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+        self.align_sword_swing()
 
     def dodge(self):
         """
@@ -223,9 +227,19 @@ class Player:
         elif self.direction == "right":
             self.hitbox.x += self.dodge_distance
 
-        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
-        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+        self.align_sword_swing()
 
+    def collide(self, block):
+        if self.direction == "up":
+            self.hitbox.y = block.bottom
+        elif self.direction == "down":
+            self.hitbox.y = block.top - self.hitbox.height
+        elif self.direction == "left":
+            self.hitbox.x = block.right
+        elif self.direction == "right":
+            self.hitbox.x = block.left - self.hitbox.width
+
+        self.align_sword_swing()
 
 class Enemy:
     """

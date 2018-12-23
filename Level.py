@@ -51,6 +51,21 @@ class Level():
                 else:
                     self.collision_array[row][column] = 0
 
+    def get_collision_list(self):
+        """DOC"""
+
+        list = []
+
+        for row in range(len(self.collision_array)):
+            for column in range(len(self.collision_array[0])):
+                if self.collision_array[row][column] is not 0:
+                    x = column * self.block_width
+                    y = row * self.block_width
+
+                    list.append(pygame.Rect(x, y, self.block_width, self.block_width))
+
+        return list
+
     def get_tile(self, number):
         """
             Gets and returns the desired block from a spritesheet, given the corresponding number.

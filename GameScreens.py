@@ -5,7 +5,7 @@ from Level import *
 from Entity import *
 
 
-def forest_entrance(screen, clock, spritesheet, player):
+def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
     """SCREEN 1"""
 
     bg_array = [
@@ -55,12 +55,11 @@ def forest_entrance(screen, clock, spritesheet, player):
         ]
 
     forest_entrance = Level(spritesheet, 32, 256, bg_array, fg_array)
+    collision_list = forest_entrance.get_collision_list()
 
-    scarlet_forest = pygame.mixer.Sound("Audio/scarlet_forest.ogg")
-    scarlet_forest.play(-1)
-
-    player.hitbox.x = 704
-    player.hitbox.y = 608
+    player.hitbox.x = spawnpoint[0]
+    player.hitbox.y = spawnpoint[1]
+    player.align_sword_swing()
 
     current_frame = player.animate(True)
 
@@ -141,12 +140,16 @@ def forest_entrance(screen, clock, spritesheet, player):
 
                     pygame.time.set_timer(walking_movement_timer, 0)
                     pygame.time.set_timer(walking_animation_timer, 0)
-                    player.animate(True)
+                    current_frame = player.animate(True)
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LALT:
                     player.dodge()
+
+        collided_with = player.hitbox.collidelist(collision_list)
+        if collided_with is not -1:
+            player.collide(collision_list[collided_with])
 
         screen.fill((255, 255, 255))
         forest_entrance.draw_bg(screen)
@@ -157,10 +160,8 @@ def forest_entrance(screen, clock, spritesheet, player):
         clock.tick(60)
         pygame.display.flip()
 
-    pygame.quit()
 
-
-def southwestern_forest(screen, clock, spritesheet, player):
+def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
     """SCREEN 2"""
 
     bg_array = [
@@ -210,9 +211,11 @@ def southwestern_forest(screen, clock, spritesheet, player):
         ]
 
     southwestern_forest = Level(spritesheet, 32, 256, bg_array, fg_array)
+    collision_list = southwestern_forest.get_collision_list()
 
-    player.hitbox.x = 1120
-    player.hitbox.y = 256
+    player.hitbox.x = spawnpoint[0]
+    player.hitbox.y = spawnpoint[1]
+    player.align_sword_swing()
 
     current_frame = player.animate(True)
 
@@ -292,12 +295,16 @@ def southwestern_forest(screen, clock, spritesheet, player):
                         and not arrow_keys["right"] and not arrow_keys["left"]:
                     pygame.time.set_timer(walking_movement_timer, 0)
                     pygame.time.set_timer(walking_animation_timer, 0)
-                    player.animate(True)
+                    current_frame = player.animate(True)
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LALT:
                     player.dodge()
+
+        collided_with = player.hitbox.collidelist(collision_list)
+        if collided_with is not -1:
+            player.collide(collision_list[collided_with])
 
         screen.fill((255, 255, 255))
         southwestern_forest.draw_bg(screen)
@@ -308,10 +315,8 @@ def southwestern_forest(screen, clock, spritesheet, player):
         clock.tick(60)
         pygame.display.flip()
 
-    pygame.quit()
 
-
-def eastern_forest(screen, clock, spritesheet, player, has_bow):
+def eastern_forest(screen, clock, spritesheet, player, spawnpoint, has_bow):
     """SCREEN 3"""
 
     bg_array = [
@@ -367,9 +372,11 @@ def eastern_forest(screen, clock, spritesheet, player, has_bow):
         fg_array[17][2] = 4
 
     eastern_forest = Level(spritesheet, 32, 256, bg_array, fg_array)
+    collision_list = eastern_forest.get_collision_list()
 
-    player.hitbox.x = 704
-    player.hitbox.y = 608
+    player.hitbox.x = spawnpoint[0]
+    player.hitbox.y = spawnpoint[1]
+    player.align_sword_swing()
 
     current_frame = player.animate(True)
 
@@ -449,12 +456,16 @@ def eastern_forest(screen, clock, spritesheet, player, has_bow):
                         and not arrow_keys["right"] and not arrow_keys["left"]:
                     pygame.time.set_timer(walking_movement_timer, 0)
                     pygame.time.set_timer(walking_animation_timer, 0)
-                    player.animate(True)
+                    current_frame = player.animate(True)
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LALT:
                     player.dodge()
+
+        collided_with = player.hitbox.collidelist(collision_list)
+        if collided_with is not -1:
+            player.collide(collision_list[collided_with])
 
         screen.fill((255, 255, 255))
         eastern_forest.draw_bg(screen)
@@ -465,10 +476,8 @@ def eastern_forest(screen, clock, spritesheet, player, has_bow):
         clock.tick(60)
         pygame.display.flip()
 
-    pygame.quit()
 
-
-def northern_forest(screen, clock, spritesheet, player):
+def northern_forest(screen, clock, spritesheet, player, spawnpoint):
     """SCREEN 4"""
 
     bg_array = [
@@ -518,9 +527,11 @@ def northern_forest(screen, clock, spritesheet, player):
         ]
 
     northern_forest = Level(spritesheet, 32, 256, bg_array, fg_array)
+    collision_list = northern_forest.get_collision_list()
 
-    player.hitbox.x = 416
-    player.hitbox.y = 608
+    player.hitbox.x = spawnpoint[0]
+    player.hitbox.y = spawnpoint[1]
+    player.align_sword_swing()
 
     current_frame = player.animate(True)
 
@@ -600,12 +611,16 @@ def northern_forest(screen, clock, spritesheet, player):
                         and not arrow_keys["right"] and not arrow_keys["left"]:
                     pygame.time.set_timer(walking_movement_timer, 0)
                     pygame.time.set_timer(walking_animation_timer, 0)
-                    player.animate(True)
+                    current_frame = player.animate(True)
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LALT:
                     player.dodge()
+
+        collided_with = player.hitbox.collidelist(collision_list)
+        if collided_with is not -1:
+            player.collide(collision_list[collided_with])
 
         screen.fill((255, 255, 255))
         northern_forest.draw_bg(screen)
@@ -616,10 +631,8 @@ def northern_forest(screen, clock, spritesheet, player):
         clock.tick(60)
         pygame.display.flip()
 
-    pygame.quit()
 
-
-def western_forest(screen, clock, spritesheet, player):
+def western_forest(screen, clock, spritesheet, player, spawnpoint):
     """SCREEN 5"""
 
     bg_array = [
@@ -669,9 +682,11 @@ def western_forest(screen, clock, spritesheet, player):
         ]
 
     western_forest = Level(spritesheet, 32, 256, bg_array, fg_array)
+    collision_list = western_forest.get_collision_list()
 
-    player.hitbox.x = 1120
-    player.hitbox.y = 512
+    player.hitbox.x = spawnpoint[0]
+    player.hitbox.y = spawnpoint[1]
+    player.align_sword_swing()
 
     current_frame = player.animate(True)
 
@@ -751,12 +766,16 @@ def western_forest(screen, clock, spritesheet, player):
                         and not arrow_keys["right"] and not arrow_keys["left"]:
                     pygame.time.set_timer(walking_movement_timer, 0)
                     pygame.time.set_timer(walking_animation_timer, 0)
-                    player.animate(True)
+                    current_frame = player.animate(True)
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LALT:
                     player.dodge()
+
+        collided_with = player.hitbox.collidelist(collision_list)
+        if collided_with is not -1:
+            player.collide(collision_list[collided_with])
 
         screen.fill((255, 255, 255))
         western_forest.draw_bg(screen)
@@ -767,10 +786,8 @@ def western_forest(screen, clock, spritesheet, player):
         clock.tick(60)
         pygame.display.flip()
 
-    pygame.quit()
 
-
-def cave(screen, clock, spritesheet, player):
+def cave(screen, clock, spritesheet, player, spawnpoint):
     """SCREEN 6"""
 
     bg_array = [
@@ -820,14 +837,11 @@ def cave(screen, clock, spritesheet, player):
         ]
 
     cave = Level(spritesheet, 32, 256, bg_array, fg_array)
+    collision_list = cave.get_collision_list()
 
-    # stop all other audio and play some boss battle music!
-    rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
-    pygame.mixer.stop()
-    rude_buster.play(-1)
-
-    player.hitbox.x = 562
-    player.hitbox.y = 608
+    player.hitbox.x = spawnpoint[0]
+    player.hitbox.y = spawnpoint[1]
+    player.align_sword_swing()
 
     current_frame = player.animate(True)
 
@@ -907,12 +921,16 @@ def cave(screen, clock, spritesheet, player):
                         and not arrow_keys["right"] and not arrow_keys["left"]:
                     pygame.time.set_timer(walking_movement_timer, 0)
                     pygame.time.set_timer(walking_animation_timer, 0)
-                    player.animate(True)
+                    current_frame = player.animate(True)
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LALT:
                     player.dodge()
+
+        collided_with = player.hitbox.collidelist(collision_list)
+        if collided_with is not -1:
+            player.collide(collision_list[collided_with])
 
         screen.fill((255, 255, 255))
         cave.draw_bg(screen)
@@ -923,8 +941,27 @@ def cave(screen, clock, spritesheet, player):
         clock.tick(60)
         pygame.display.flip()
 
-    pygame.quit()
 
+def screen_handler(screen, clock, spritesheet, player):
+    """Handles which screens should be called, and anything that goes on in between."""
+
+    pygame.mixer.stop()
+    scarlet_forest = pygame.mixer.Sound("Audio/scarlet_forest.ogg")
+    scarlet_forest.play(-1)
+
+    forest_entrance(screen, clock, spritesheet, player, (704, 608))
+    southwestern_forest(screen, clock, spritesheet, player, (1120, 256))
+    forest_entrance(screen, clock, spritesheet, player, (0, 256))
+    eastern_forest(screen, clock, spritesheet, player, (704, 608), False)
+    northern_forest(screen, clock, spritesheet, player, (416, 608))
+    eastern_forest(screen, clock, spritesheet, player, (416, 0), True)
+    western_forest(screen, clock, spritesheet, player, (1120, 512))
+
+    pygame.mixer.stop()
+    rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
+    rude_buster.play(-1)
+
+    cave(screen, clock, spritesheet, player, (562, 608))
 
 if __name__ == "__main__":
     pygame.init()
@@ -949,4 +986,4 @@ if __name__ == "__main__":
 
     player = Player(7, 20, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), "up", 5, animations)
 
-    forest_entrance(screen, clock, spritesheet, player)
+    screen_handler(screen, clock, spritesheet, player)
