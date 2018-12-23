@@ -121,9 +121,14 @@ class Player:
         """DOC"""
         self.move_speed = move_speed
         self.dodge_distance = dodge_distance
+
         self.hitbox = hitbox
         self.sword_swing = sword_swing
+        self.swing_x_offset = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
+        self.swing_y_offset = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
+
         self.direction = direction
+
         self.health = health
 
         self.current_frame = 0
@@ -202,6 +207,9 @@ class Player:
         elif self.direction == "right":
             self.hitbox.x += self.move_speed
 
+        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
+        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+
     def dodge(self):
         """
         DOC
@@ -214,6 +222,9 @@ class Player:
             self.hitbox.x -= self.dodge_distance
         elif self.direction == "right":
             self.hitbox.x += self.dodge_distance
+
+        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
+        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
 
 
 class Enemy:
