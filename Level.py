@@ -45,9 +45,21 @@ class Level():
         for row in range(len(self.collision_array)):
             for column in range(len(self.collision_array[0])):
 
-                # current tile is an interactive tile (chest or sign)
-                if self.fg_array[row][column] in range(16, 22) or self.fg_array[row][column] in (30, 31):
+                # current tile is a pathway to another screen
+                if self.fg_array[row][column] == 32:
+                    self.collision_array[row][column] = 4
+
+                # current tile is a chest
+                elif self.fg_array[row][column] in range(18, 22) or self.fg_array[row][column] in range(30, 32):
+                    self.collision_array[row][column] = 3
+
+                # current tile is a sign
+                elif self.fg_array[row][column] in range(16, 18):
                     self.collision_array[row][column] = 2
+
+                # special case: current tile is the bottom portion of the cave (must be non-collision)
+                elif self.fg_array[row][column] in range(25, 28):
+                    self.collision_array[row][column] = 0
 
                 # current tile is just a collision block
                 elif self.fg_array[row][column] not in range(4, 12) and self.fg_array[row][column] is not 0:
@@ -73,6 +85,9 @@ class Level():
                     y = row * self.block_width
 
                     list.append(pygame.Rect(x, y, self.block_width, self.block_width))
+
+                else:
+                    list.append(None)
 
         return list
 

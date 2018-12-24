@@ -21,10 +21,10 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
 
     # the background tileset to be drawn before the player (includes grass, dirt or stone)
     bg_array = [
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1],
         [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1],
         [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1],
@@ -45,9 +45,9 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
 
     # the foreground tileset to be drawn after the player (includes any interactive blocks, trees, rocks, etc.)
     fg_array = [
-        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-        [3, 3,12, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,11, 0,10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,13, 3, 3],
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        [3, 3,12, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,11, 0,10, 5, 5, 5, 5, 5, 5, 5, 5, 5,13, 3, 3],
         [3, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 3],
         [3, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 3],
         [3, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 3],
@@ -77,6 +77,9 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
+    entered_forest = False
+    entered_screen = False
+
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
 
     # pygame timer event ID's used for activating events like animation and movement
@@ -92,17 +95,15 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
     # so that the player movement/animation timers can be stopped, as well as the animation and movement itself.
     arrow_keys = {"up": False, "down": False, "right": False, "left": False}
 
-    done = False  # used to tell the screen when it is done (go back to screen_handler function)
-
     # MAIN GAME SCREEN LOOP
-    while not done:
+    while True:
 
         # parse pygame events
         for event in pygame.event.get():
 
             # user clicked exit
             if event.type == pygame.QUIT:
-                done = True  # done with the screen
+                return -1
 
             # advance walking animation
             if event.type == walking_animation_timer:
@@ -192,12 +193,51 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
                 if event.key == pygame.K_LALT:
                     player.dodge()
 
-        # check for player collisions with the environment
-        collided_with = player.hitbox.collidelist(collision_list)
+        # if the player enters the forest or the player comes in from a different spawn point (already entered)
+        if spawnpoint[1] != 608 or (not entered_forest and player.hitbox.y < spawnpoint[1] - player.hitbox.height):
 
-        # player is colliding with a block
-        if collided_with is not -1:
-            player.collide(collision_list[collided_with])  # call the player collision function with the collided block
+            # draw a rock barrier in front of the entrance
+            forest_entrance.fg_array[19][21] = 29
+            forest_entrance.fg_array[19][22] = 29
+            forest_entrance.fg_array[19][23] = 29
+            # update the collision array to have simple collision for the rocks
+            forest_entrance.collision_array[19][21] = 1
+            forest_entrance.collision_array[19][22] = 1
+            forest_entrance.collision_array[19][23] = 1
+
+            collision_list = forest_entrance.get_collision_list()  # update the collision list
+
+            entered_forest = True  # the player has now entered the forest
+
+        # if the player fully enters the screen from a different screen, add the exit paths to the collision array
+        if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
+                                   player.hitbox.x < spawnpoint[0] - player.hitbox.width or
+                                   player.hitbox.y > spawnpoint[1] + player.hitbox.height or
+                                   player.hitbox.y < spawnpoint[1] - player.hitbox.height):
+
+            # set the exit pathways' collision physics to 4
+            forest_entrance.collision_array[8][0] = 4
+            forest_entrance.collision_array[0][22] = 5
+
+            collision_list = forest_entrance.get_collision_list()  # update the collision_list
+
+            entered_screen = True  # the player has now entered the screen
+
+        for block in range(len(collision_list) - 1):
+            if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
+
+                row = block // len(forest_entrance.collision_array[0])
+                column = block % len(forest_entrance.collision_array[0])
+
+                type = forest_entrance.collision_array[row][column]
+
+
+                if type is 4:
+                    return 1, 2  # go to screen 2
+                elif type is 5:
+                    return 1, 3  # go to screen 3
+                else:
+                    player.collide(collision_list[block])
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
@@ -288,6 +328,8 @@ def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
+    entered_screen = False
+
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
 
     # pygame timer event ID's used for activating events like animation and movement
@@ -303,17 +345,15 @@ def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
     # so that the player movement/animation timers can be stopped, as well as the animation and movement itself.
     arrow_keys = {"up": False, "down": False, "right": False, "left": False}
 
-    done = False  # used to tell the screen when it is done (go back to screen_handler function)
-
     # MAIN GAME SCREEN LOOP
-    while not done:
+    while True:
 
         # parse pygame events
         for event in pygame.event.get():
 
             # user clicked exit
             if event.type == pygame.QUIT:
-                done = True  # done with the screen
+                return -1
 
             # advance walking animation
             if event.type == walking_animation_timer:
@@ -403,12 +443,31 @@ def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
                 if event.key == pygame.K_LALT:
                     player.dodge()
 
-        # check for player collisions with the environment
-        collided_with = player.hitbox.collidelist(collision_list)
+        # if the player fully enters the screen from a different screen, add the exit paths to the collision array
+        if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
+                                   player.hitbox.x < spawnpoint[0] - player.hitbox.width or
+                                   player.hitbox.y > spawnpoint[1] + player.hitbox.height or
+                                   player.hitbox.y < spawnpoint[1] - player.hitbox.height):
 
-        # player is colliding with a block
-        if collided_with is not -1:
-            player.collide(collision_list[collided_with])  # call the player collision function with the collided block
+            # set the exit pathway's collision physics to 4
+            southwestern_forest.collision_array[8][35] = 4
+
+            collision_list = southwestern_forest.get_collision_list()  # update the collision_list
+
+            entered_screen = True  # the player has now entered the screen
+
+        for block in range(len(collision_list) - 1):
+            if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
+
+                row = block // len(southwestern_forest.collision_array[0])
+                column = block % len(southwestern_forest.collision_array[0])
+
+                type = southwestern_forest.collision_array[row][column]
+
+                if type is 4:
+                    return 2, 1 # go to screen 1
+                else:
+                    player.collide(collision_list[block])
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
@@ -510,6 +569,8 @@ def eastern_forest(screen, clock, spritesheet, player, spawnpoint, has_bow):
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
+    entered_screen = False
+
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
 
     # pygame timer event ID's used for activating events like animation and movement
@@ -525,17 +586,15 @@ def eastern_forest(screen, clock, spritesheet, player, spawnpoint, has_bow):
     # so that the player movement/animation timers can be stopped, as well as the animation and movement itself.
     arrow_keys = {"up": False, "down": False, "right": False, "left": False}
 
-    done = False  # used to tell the screen when it is done (go back to screen_handler function)
-
     # MAIN GAME SCREEN LOOP
-    while not done:
+    while True:
 
         # parse pygame events
         for event in pygame.event.get():
 
             # user clicked exit
             if event.type == pygame.QUIT:
-                done = True  # done with the screen
+                return -1
 
             # advance walking animation
             if event.type == walking_animation_timer:
@@ -625,13 +684,37 @@ def eastern_forest(screen, clock, spritesheet, player, spawnpoint, has_bow):
                 if event.key == pygame.K_LALT:
                     player.dodge()
 
-        # check for player collisions with the environment
-        collided_with = player.hitbox.collidelist(collision_list)
+        # if the player fully enters the screen from a different screen, add the exit paths to the collision array
+        if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
+                                   player.hitbox.x < spawnpoint[0] - player.hitbox.width or
+                                   player.hitbox.y > spawnpoint[1] + player.hitbox.height or
+                                   player.hitbox.y < spawnpoint[1] - player.hitbox.height):
 
-        # player is colliding with a block
-        if collided_with is not -1:
-            player.collide(
-                collision_list[collided_with])  # call the player collision function with the collided block
+            # set the exit pathways' collision physics to the appropriate pathway number
+            eastern_forest.collision_array[19][22] = 4
+            eastern_forest.collision_array[0][13] = 5
+            eastern_forest.collision_array[16][0] = 6
+
+            collision_list = eastern_forest.get_collision_list()  # update the collision_list
+
+            entered_screen = True  # the player has now entered the screen
+
+        for block in range(len(collision_list) - 1):
+            if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
+
+                row = block // len(eastern_forest.collision_array[0])
+                column = block % len(eastern_forest.collision_array[0])
+
+                type = eastern_forest.collision_array[row][column]
+
+                if type is 4:
+                    return 3, 1  # go to screen 1
+                elif type is 5:
+                    return 3, 4  # go to screen 4
+                elif type is 6:
+                    return 3, 5  # go to screen 5
+                else:
+                    player.collide(collision_list[block])
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
@@ -724,6 +807,8 @@ def northern_forest(screen, clock, spritesheet, player, spawnpoint):
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
+    entered_screen = False
+
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
 
     # pygame timer event ID's used for activating events like animation and movement
@@ -739,17 +824,15 @@ def northern_forest(screen, clock, spritesheet, player, spawnpoint):
     # so that the player movement/animation timers can be stopped, as well as the animation and movement itself.
     arrow_keys = {"up": False, "down": False, "right": False, "left": False}
 
-    done = False  # used to tell the screen when it is done (go back to screen_handler function)
-
     # MAIN GAME SCREEN LOOP
-    while not done:
+    while True:
 
         # parse pygame events
         for event in pygame.event.get():
 
             # user clicked exit
             if event.type == pygame.QUIT:
-                done = True  # done with the screen
+                return -1
 
             # advance walking animation
             if event.type == walking_animation_timer:
@@ -839,12 +922,31 @@ def northern_forest(screen, clock, spritesheet, player, spawnpoint):
                 if event.key == pygame.K_LALT:
                     player.dodge()
 
-        # check for player collisions with the environment
-        collided_with = player.hitbox.collidelist(collision_list)
+        # if the player fully enters the screen from a different screen, add the exit paths to the collision array
+        if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
+                                   player.hitbox.x < spawnpoint[0] - player.hitbox.width or
+                                   player.hitbox.y > spawnpoint[1] + player.hitbox.height or
+                                   player.hitbox.y < spawnpoint[1] - player.hitbox.height):
 
-        # player is colliding with a block
-        if collided_with is not -1:
-            player.collide(collision_list[collided_with])  # call the player collision function with the collided block
+            # set the exit pathway's collision physics to 4
+            northern_forest.collision_array[19][13] = 4
+
+            collision_list = northern_forest.get_collision_list()  # update the collision_list
+
+            entered_screen = True  # the player has now entered the screen
+
+        for block in range(len(collision_list) - 1):
+            if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
+
+                row = block // len(northern_forest.collision_array[0])
+                column = block % len(northern_forest.collision_array[0])
+
+                type = northern_forest.collision_array[row][column]
+
+                if type is 4:
+                    return 4, 3  # go to screen 3
+                else:
+                    player.collide(collision_list[block])
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
@@ -936,6 +1038,8 @@ def western_forest(screen, clock, spritesheet, player, spawnpoint):
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
+    entered_screen = False
+
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
 
     # pygame timer event ID's used for activating events like animation and movement
@@ -951,17 +1055,15 @@ def western_forest(screen, clock, spritesheet, player, spawnpoint):
     # so that the player movement/animation timers can be stopped, as well as the animation and movement itself.
     arrow_keys = {"up": False, "down": False, "right": False, "left": False}
 
-    done = False  # used to tell the screen when it is done (go back to screen_handler function)
-
     # MAIN GAME SCREEN LOOP
-    while not done:
+    while True:
 
         # parse pygame events
         for event in pygame.event.get():
 
             # user clicked exit
             if event.type == pygame.QUIT:
-                done = True  # done with the screen
+                return -1
 
             # advance walking animation
             if event.type == walking_animation_timer:
@@ -1051,12 +1153,34 @@ def western_forest(screen, clock, spritesheet, player, spawnpoint):
                 if event.key == pygame.K_LALT:
                     player.dodge()
 
-        # check for player collisions with the environment
-        collided_with = player.hitbox.collidelist(collision_list)
+        # if the player fully enters the screen from a different screen, add the exit paths to the collision array
+        if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
+                                   player.hitbox.x < spawnpoint[0] - player.hitbox.width or
+                                   player.hitbox.y > spawnpoint[1] + player.hitbox.height or
+                                   player.hitbox.y < spawnpoint[1] - player.hitbox.height):
 
-        # player is colliding with a block
-        if collided_with is not -1:
-            player.collide(collision_list[collided_with])  # call the player collision function with the collided block
+            # set the exit pathways collision physics to 4
+            western_forest.collision_array[16][35] = 4
+            western_forest.collision_array[0][19] = 5
+
+            collision_list = western_forest.get_collision_list()  # update the collision_list
+
+            entered_screen = True  # the player has now entered the screen
+
+        for block in range(len(collision_list) - 1):
+            if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
+
+                row = block // len(western_forest.collision_array[0])
+                column = block % len(western_forest.collision_array[0])
+
+                type = western_forest.collision_array[row][column]
+
+                if type is 4:
+                    return 5, 3  # go to screen 3
+                elif type is 5:
+                    return 5, 6  # go to screen 6
+                else:
+                    player.collide(collision_list[block])
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
@@ -1148,6 +1272,8 @@ def cave(screen, clock, spritesheet, player, spawnpoint):
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
+    entered_screen = False
+
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
 
     # pygame timer event ID's used for activating events like animation and movement
@@ -1163,17 +1289,15 @@ def cave(screen, clock, spritesheet, player, spawnpoint):
     # so that the player movement/animation timers can be stopped, as well as the animation and movement itself.
     arrow_keys = {"up": False, "down": False, "right": False, "left": False}
 
-    done = False  # used to tell the screen when it is done (go back to screen_handler function)
-
     # MAIN GAME SCREEN LOOP
-    while not done:
+    while True:
 
         # parse pygame events
         for event in pygame.event.get():
 
             # user clicked exit
             if event.type == pygame.QUIT:
-                done = True  # done with the screen
+                return -1
 
             # advance walking animation
             if event.type == walking_animation_timer:
@@ -1263,12 +1387,32 @@ def cave(screen, clock, spritesheet, player, spawnpoint):
                 if event.key == pygame.K_LALT:
                     player.dodge()
 
-        # check for player collisions with the environment
-        collided_with = player.hitbox.collidelist(collision_list)
+        # if the player fully enters the screen from a different screen, add the exit paths to the collision array
+        if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
+                                   player.hitbox.x < spawnpoint[0] - player.hitbox.width or
+                                   player.hitbox.y > spawnpoint[1] + player.hitbox.height or
+                                   player.hitbox.y < spawnpoint[1] - player.hitbox.height):
 
-        # player is colliding with a block
-        if collided_with is not -1:
-            player.collide(collision_list[collided_with])  # call the player collision function with the collided block
+            # block off the entrance to the cave with rocks
+            cave.fg_array[19][17] = 29
+            cave.fg_array[19][18] = 29
+            # set the rocks' collision mode to 1 (standard collision)
+            cave.collision_array[19][17] = 1
+            cave.collision_array[19][18] = 1
+
+            collision_list = cave.get_collision_list()  # update the collision_list
+
+            entered_screen = True  # the user has now entered the screen
+
+        for block in range(len(collision_list) - 1):
+            if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
+
+                row = block // len(cave.collision_array[0])
+                column = block % len(cave.collision_array[0])
+
+                type = cave.collision_array[row][column]
+
+                player.collide(collision_list[block])
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
@@ -1294,21 +1438,57 @@ def screen_handler(screen, clock, spritesheet, player):
     scarlet_forest = pygame.mixer.Sound("Audio/scarlet_forest.ogg")
     scarlet_forest.play(-1)
 
-    # currently for debugging purposes -- draws the next logical screen after one has been closed
-    forest_entrance(screen, clock, spritesheet, player, (704, 608))
-    southwestern_forest(screen, clock, spritesheet, player, (1120, 256))
-    forest_entrance(screen, clock, spritesheet, player, (0, 256))
-    eastern_forest(screen, clock, spritesheet, player, (704, 608), False)
-    northern_forest(screen, clock, spritesheet, player, (416, 608))
-    eastern_forest(screen, clock, spritesheet, player, (416, 0), True)
-    western_forest(screen, clock, spritesheet, player, (1120, 512))
+    returned_info = (0, 1)
+    prev_screen = returned_info[0]
+    next_screen = returned_info[1]
 
-    # stop any misc that is playing, and play some boss music! (in a loop)
-    pygame.mixer.stop()
-    rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
-    rude_buster.play(-1)
+    while True:
 
-    cave(screen, clock, spritesheet, player, (562, 608))
+        if next_screen is 1:
+            if prev_screen is 0:
+                returned_info = forest_entrance(screen, clock, spritesheet, player, (704, 608))
+            elif prev_screen is 2:
+                returned_info = forest_entrance(screen, clock, spritesheet, player, (0, 256))
+            elif prev_screen is 3:
+                returned_info = forest_entrance(screen, clock, spritesheet, player, (704, 0))
+
+        elif next_screen is 2:
+            if prev_screen is 1:
+                returned_info = southwestern_forest(screen, clock, spritesheet, player, (1120, 256))
+
+        elif next_screen is 3:
+            if prev_screen is 1:
+                returned_info = eastern_forest(screen, clock, spritesheet, player, (704, 608), False)
+            elif prev_screen is 4:
+                returned_info = eastern_forest(screen, clock, spritesheet, player, (416, 0), True)
+            elif prev_screen is 5:
+                returned_info = eastern_forest(screen, clock, spritesheet, player, (0, 512), True)
+
+        elif next_screen is 4:
+            if prev_screen is 3:
+                returned_info = northern_forest(screen, clock, spritesheet, player, (416, 608))
+
+        elif next_screen is 5:
+            if prev_screen is 3:
+                returned_info = western_forest(screen, clock, spritesheet, player, (1120, 512))
+
+        elif next_screen is 6:
+            if prev_screen is 5:
+                # stop any misc that is playing, and play some boss music! (in a loop)
+                pygame.mixer.stop()
+                rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
+                rude_buster.play(-1)
+
+                returned_info = cave(screen, clock, spritesheet, player, (562, 608))
+
+        if returned_info is -1:
+            break
+
+        prev_screen = returned_info[0]
+        next_screen = returned_info[1]
+
+    pygame.quit()
+    print("Thanks for playing!")
 
 
 if __name__ == "__main__":
