@@ -10,14 +10,20 @@ class Level():
 
     Attributes:
         spritesheet: must be of type pygame.image converted to a per-pixel alpha surface; the spritesheet containing
-        all the tiles, items, enemies, and player animations.
+                     all the tiles, items, enemies, and player animations.
 
         block_width: must be int; the width (in pixels) of one column or 'block' of the spritesheet.
         sheet_width: must be int; the width (in pixels) of the entire spritesheet. (ex: an 8 column spritesheet with
-        each column 32 pixels wide would need to have a width of 256)
+                     each column 32 pixels wide would need to have a width of 256)
 
         bg_array: must be a two dimensional array containing all the tileset numbers for the background layer.
         fg_array: must be a two dimensional array containing all the tileset numbers for the foreground layer.
+
+    Created Attributes:
+        num_columns: the number of columns in each row of the spritesheet.
+
+        collision_array: an array the same size as the fg and bg arrays, corresponding to different types
+                         of collision blocks.
     """
 
     def __init__(self, spritesheet, block_width, sheet_width, bg_array, fg_array):
@@ -52,7 +58,11 @@ class Level():
                     self.collision_array[row][column] = 0
 
     def get_collision_list(self):
-        """DOC"""
+        """
+        creates a list of pygame rectangles based on the collision_list attribute.
+
+        returns: list with elements of type pygame.Rect; the collision rectangles of the environment
+        """
 
         list = []
 
