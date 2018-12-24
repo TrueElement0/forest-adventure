@@ -230,13 +230,13 @@ class Player:
         self.align_sword_swing()
 
     def collide(self, block):
-        if self.direction == "up":
+        if self.direction == "up" and block.y < self.hitbox.y:
             self.hitbox.y = block.bottom
-        elif self.direction == "down":
+        elif self.direction == "down" and block.y > self.hitbox.y:
             self.hitbox.y = block.top - self.hitbox.height
-        elif self.direction == "left":
+        elif self.direction == "left" and block.x < self.hitbox.x:
             self.hitbox.x = block.right
-        elif self.direction == "right":
+        elif self.direction == "right" and block.x > self.hitbox.x:
             self.hitbox.x = block.left - self.hitbox.width
 
         self.align_sword_swing()

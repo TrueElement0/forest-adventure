@@ -6,7 +6,18 @@ from Entity import *
 
 
 def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
-    """SCREEN 1"""
+    """
+    Screen 1 -- the forest entrance. The player enters from the bottom and cannot go back through the entrance.
+    There is one enemy that spawns, and the player can progress to screen 2 or 3 from this screen.
+
+    Parameters:
+        screen: must be of type pygame.Surface; the screen surface to draw to.
+        clock: must be of type pygame.Clock; the graphics clock used for drawing.
+        player: must be a player object from the entity module; the player character.
+        spawnpoint: must be a tuple of length 2; the x and y coordinates of where the player spawns.
+
+    Returns: (none)
+    """
 
     bg_array = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -162,7 +173,19 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
 
 
 def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
-    """SCREEN 2"""
+    """
+    Screen 2 -- the southwestern forest. The player enters from the east (from screen 1) and can return if they choose.
+    There will be three enemies that spawn throughout the screen, and one chest at the end of the pathway that
+    contains a health potion.
+
+    Parameters:
+        screen: must be of type pygame.Surface; the screen surface to draw to.
+        clock: must be of type pygame.Clock; the graphics clock used for drawing.
+        player: must be a player object from the entity module; the player character.
+        spawnpoint: must be a tuple of length 2; the x and y coordinates of where the player spawns.
+
+    Returns: (none)
+    """
 
     bg_array = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
