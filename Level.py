@@ -177,3 +177,25 @@ class Level():
                     y = self.block_width * row
 
                     surface.blit(current_tile, (x, y))  # blit the tile to the screen position
+
+
+class HUD:
+    """DOC"""
+
+    def __init__(self, spritesheet, base_rect, inventory_dict, current_item, quest_text, health, boss_health=None):
+        """DOC"""
+
+        self.spritesheet = spritesheet
+        self.base_rect = base_rect
+        self.inventory_dict = inventory_dict
+        self.current_item = current_item
+        self.quest_text = quest_text
+        self.health = health
+        self.boss_health = boss_health
+
+        self.hud = pygame.Surface(base_rect.size, pygame.SRCALPHA)
+        self.hud.blit(spritesheet, (0, 0), base_rect)
+
+    def draw(self, screen, coordinates):
+        """DOC"""
+        screen.blit(self.hud, coordinates)
