@@ -5,7 +5,7 @@ from Level import *
 from Entity import *
 
 
-def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
+def forest_entrance(screen, clock, spritesheet, hud_elements, player, spawnpoint):
     """
     Screen 1 -- The forest entrance. The player enters from the South and cannot go back through the entrance.
     There is one enemy that spawns, and the player can progress to screen 2 or 3 from this screen.
@@ -241,6 +241,8 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
+        screen.blit(hud_elements, (0, 640))
+
         # draw the background layer, then the player, then the foreground layer
         forest_entrance.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
@@ -255,7 +257,7 @@ def forest_entrance(screen, clock, spritesheet, player, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
+def southwestern_forest(screen, clock, spritesheet, hud_elements, player, spawnpoint):
     """
     Screen 2 -- The Southwestern forest. The player enters from the East (from screen 1) and can return if they choose.
     There are three enemies that spawn throughout the screen, and one chest at the end of the pathway that
@@ -471,6 +473,8 @@ def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
+        screen.blit(hud_elements, (0, 640))
+
         # draw the background layer, then the player, then the foreground layer
         southwestern_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
@@ -485,7 +489,7 @@ def southwestern_forest(screen, clock, spritesheet, player, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def eastern_forest(screen, clock, spritesheet, player, spawnpoint, has_bow):
+def eastern_forest(screen, clock, spritesheet, hud_elements, player, spawnpoint, has_bow):
     """
     Screen 3 -- The Eastern forest. The player enters from the South originally, or the North if they have collected
     the bow and arrows from the Northern screen. There are two enemies that spawn, both melee, on this screen, and one
@@ -718,6 +722,8 @@ def eastern_forest(screen, clock, spritesheet, player, spawnpoint, has_bow):
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
+        screen.blit(hud_elements, (0, 640))
+
         # draw the background layer, then the player, then the foreground layer
         eastern_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
@@ -732,7 +738,7 @@ def eastern_forest(screen, clock, spritesheet, player, spawnpoint, has_bow):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def northern_forest(screen, clock, spritesheet, player, spawnpoint):
+def northern_forest(screen, clock, spritesheet, hud_elements, player, spawnpoint):
     """
     Screen 4 -- The Northern forest. The player enters from the South and can return (to screen 3) if they choose.
     There are three enemies that spawn on this screen, one ranged enemy on the left, one melee enemy that patrols the
@@ -950,6 +956,8 @@ def northern_forest(screen, clock, spritesheet, player, spawnpoint):
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
+        screen.blit(hud_elements, (0, 640))
+
         # draw the background layer, then the player, then the foreground layer
         northern_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
@@ -964,7 +972,7 @@ def northern_forest(screen, clock, spritesheet, player, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def western_forest(screen, clock, spritesheet, player, spawnpoint):
+def western_forest(screen, clock, spritesheet, hud_elements, player, spawnpoint):
     """
     Screen 5 -- The Western forest. The player enters from the east (from screen 3) and can return if they choose.
     The player can also exit through the cave in the North to advance to the bossfight. There are three enemies that
@@ -1184,6 +1192,8 @@ def western_forest(screen, clock, spritesheet, player, spawnpoint):
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
+        screen.blit(hud_elements, (0, 640))
+
         # draw the background layer, then the player, then the foreground layer
         western_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
@@ -1198,7 +1208,7 @@ def western_forest(screen, clock, spritesheet, player, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def cave(screen, clock, spritesheet, player, spawnpoint):
+def cave(screen, clock, spritesheet, hud_elements, player, spawnpoint):
     """
     Screen 6 -- The cave. The player enters from the south and cannot exit back through. There is only one enemy
     in the cave -- the boss -- which is 4 times the size of the player. He is both ranged and melee, which is determined
@@ -1266,6 +1276,8 @@ def cave(screen, clock, spritesheet, player, spawnpoint):
     cave = Level(spritesheet, 32, 256, bg_array, fg_array)
     # get a list of rectangles, corresponding to collideable blocks
     collision_list = cave.get_collision_list()
+
+    pygame.mixer.stop()  # now that the level has been loaded, stop all music from playing (for suspense, of course!)
 
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
@@ -1404,6 +1416,10 @@ def cave(screen, clock, spritesheet, player, spawnpoint):
 
             entered_screen = True  # the user has now entered the screen
 
+            # play some boss music!
+            rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
+            rude_buster.play(-1)
+
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
 
@@ -1415,6 +1431,8 @@ def cave(screen, clock, spritesheet, player, spawnpoint):
                 player.collide(collision_list[block])
 
         screen.fill((255, 255, 255))  # (reset the screen with white)
+
+        screen.blit(hud_elements, (0, 640))
 
         # draw the background layer, then the player, then the foreground layer
         cave.draw_bg(screen)
@@ -1430,7 +1448,7 @@ def cave(screen, clock, spritesheet, player, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def screen_handler(screen, clock, spritesheet, player):
+def screen_handler(screen, clock, spritesheet, hud_elements, player):
     """Handles which screens should be called, and anything that goes on in between."""
 
     # stop any music that is playing, and play the forest music in a loop
@@ -1446,40 +1464,35 @@ def screen_handler(screen, clock, spritesheet, player):
 
         if next_screen is 1:
             if prev_screen is 0:
-                returned_info = forest_entrance(screen, clock, spritesheet, player, (704, 608))
+                returned_info = forest_entrance(screen, clock, spritesheet, hud_elements, player, (704, 608))
             elif prev_screen is 2:
-                returned_info = forest_entrance(screen, clock, spritesheet, player, (0, 256))
+                returned_info = forest_entrance(screen, clock, spritesheet, hud_elements, player, (0, 256))
             elif prev_screen is 3:
-                returned_info = forest_entrance(screen, clock, spritesheet, player, (704, 0))
+                returned_info = forest_entrance(screen, clock, spritesheet, hud_elements, player, (704, 0))
 
         elif next_screen is 2:
             if prev_screen is 1:
-                returned_info = southwestern_forest(screen, clock, spritesheet, player, (1120, 256))
+                returned_info = southwestern_forest(screen, clock, spritesheet, hud_elements, player, (1120, 256))
 
         elif next_screen is 3:
             if prev_screen is 1:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, (704, 608), False)
+                returned_info = eastern_forest(screen, clock, spritesheet, hud_elements, player, (704, 608), False)
             elif prev_screen is 4:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, (416, 0), True)
+                returned_info = eastern_forest(screen, clock, spritesheet, hud_elements, player, (416, 0), True)
             elif prev_screen is 5:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, (0, 512), True)
+                returned_info = eastern_forest(screen, clock, spritesheet, hud_elements, player, (0, 512), True)
 
         elif next_screen is 4:
             if prev_screen is 3:
-                returned_info = northern_forest(screen, clock, spritesheet, player, (416, 608))
+                returned_info = northern_forest(screen, clock, spritesheet, hud_elements, player, (416, 608))
 
         elif next_screen is 5:
             if prev_screen is 3:
-                returned_info = western_forest(screen, clock, spritesheet, player, (1120, 512))
+                returned_info = western_forest(screen, clock, spritesheet, hud_elements, player, (1120, 512))
 
         elif next_screen is 6:
             if prev_screen is 5:
-                # stop any misc that is playing, and play some boss music! (in a loop)
-                pygame.mixer.stop()
-                rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
-                rude_buster.play(-1)
-
-                returned_info = cave(screen, clock, spritesheet, player, (562, 608))
+                returned_info = cave(screen, clock, spritesheet, hud_elements, player, (562, 608))
 
         if returned_info is -1:
             break
@@ -1500,6 +1513,7 @@ if __name__ == "__main__":
 
     # load the tileset and entity spritesheet
     spritesheet = pygame.image.load("Images/spritesheet.png").convert_alpha()
+    hud_elements = pygame.image.load("Images/hud_elements.png").convert_alpha()
 
     pygame.display.set_caption("Forest Adventure")  # set the caption on the top of the window
     # SET ICON
@@ -1520,4 +1534,4 @@ if __name__ == "__main__":
     player = Player(7, 20, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), "up", 5, animations)
 
     # call the screen handler function used to load screens
-    screen_handler(screen, clock, spritesheet, player)
+    screen_handler(screen, clock, spritesheet, hud_elements, player)
