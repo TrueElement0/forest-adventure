@@ -327,6 +327,23 @@ class Player:
 
         self.align_sword_swing()  # align the sword_swing hitbox
 
+    def step_back(self):
+
+        # move down
+        if self.direction == "up":
+            self.hitbox.y += self.move_speed
+        # move up
+        elif self.direction == "down":
+            self.hitbox.y -= self.move_speed
+        # move right
+        elif self.direction == "left":
+            self.hitbox.x += self.move_speed
+        # move left
+        elif self.direction == "right":
+            self.hitbox.x -= self.move_speed
+
+        self.align_sword_swing()  # align the sword_swing hitbox
+
     def collide(self, block):
         """
         Determines the appropriate movement for the player when a collision happens.

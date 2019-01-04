@@ -62,7 +62,7 @@ class Level():
                     self.collision_array[row][column] = 0
 
                 # current tile is just a collision block
-                elif self.fg_array[row][column] not in range(4, 12) and self.fg_array[row][column] is not 0:
+                elif self.fg_array[row][column] not in range(4, 16) and self.fg_array[row][column] is not 0:
                     self.collision_array[row][column] = 1
 
                 # current tile is non-collision, or is a background block

@@ -67,10 +67,25 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
 
+    # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
+    screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
+                         pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
+
     # create a level object, and give it the two arrays created above
     forest_entrance = Level(spritesheet, 32, 256, bg_array, fg_array)
     # get a list of rectangles, corresponding to collideable blocks
     collision_list = forest_entrance.get_collision_list()
+
+    sign_text = ["Welcome to the windy forest. There have been rumors of great riches lying around here somewhere:",
+                "something about a cave? I'll bet it's guarded though...so you should probably look around for a",
+                "better weapon. Move around with the arrow keys, attack with left ALT, and dodge with left CTRL.",
+                "You can also use the numbers 1-5 to access items in your inventory, and use them with left ALT.",
+                "Oh, and you can press ESCAPE to exit signs!",
+                "Good luck, adventurer!"]
+
+    font = pygame.font.SysFont("calibri", 22, True)
+
+    showing_sign = False
 
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
@@ -106,17 +121,17 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
                 return -1
 
             # advance walking animation
-            if event.type == walking_animation_timer:
+            if event.type == walking_animation_timer and not showing_sign:
                 # get the next frame of the animation
                 current_frame = player.animate()
 
             # advance actual positional movement
-            if event.type == walking_movement_timer:
+            if event.type == walking_movement_timer and not showing_sign:
                 # move the player based on their movement speed
                 player.move()
 
             # check keypresses
-            if event.type == check_keypresses_timer:
+            if event.type == check_keypresses_timer and not showing_sign:
 
                 keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
 
@@ -190,8 +205,11 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL:
+                if event.key == pygame.K_LCTRL and not showing_sign:
                     player.dodge()
+
+                elif event.key == pygame.K_ESCAPE:
+                    showing_sign = False
 
         # if the player enters the forest or the player comes in from a different spawn point (already entered)
         if spawnpoint[1] != 608 or (not entered_forest and player.hitbox.y < spawnpoint[1] - player.hitbox.height):
@@ -223,18 +241,27 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
 
             entered_screen = True  # the player has now entered the screen
 
+        for boundary in screen_boundaries:
+            if player.hitbox.colliderect(boundary):
+                player.collide(boundary)
+
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
 
                 row = block // len(forest_entrance.collision_array[0])
                 column = block % len(forest_entrance.collision_array[0])
 
-                type = forest_entrance.collision_array[row][column]
+                block_type = forest_entrance.collision_array[row][column]
 
+                # collided with a sign, so collide, step back, and set the showing_sign variable to true
+                if block_type is 2:
+                    player.collide(collision_list[block])
+                    player.step_back()
+                    showing_sign = True
 
-                if type is 4:
+                elif block_type is 4:
                     return 1, 2  # go to screen 2
-                elif type is 5:
+                elif block_type is 5:
                     return 1, 3  # go to screen 3
                 else:
                     player.collide(collision_list[block])
@@ -251,6 +278,12 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
         pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
         pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
+
+        if showing_sign:
+            pygame.draw.rect(screen, (100, 100, 25), (100, 50, 950, 500))
+            for line in sign_text:
+                current_text = font.render(line, True, (0, 0, 0))
+                screen.blit(current_text, (120, 100 + (50 * sign_text.index(line))))
 
         clock.tick(60)  # limit screen updates to 60 fps
 
@@ -319,6 +352,10 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
+
+    # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
+    screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
+                         pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
 
     # create a level object, and give it the two arrays created above
     southwestern_forest = Level(spritesheet, 32, 256, bg_array, fg_array)
@@ -458,15 +495,19 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
             entered_screen = True  # the player has now entered the screen
 
+        for boundary in screen_boundaries:
+            if player.hitbox.colliderect(boundary):
+                player.collide(boundary)
+
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
 
                 row = block // len(southwestern_forest.collision_array[0])
                 column = block % len(southwestern_forest.collision_array[0])
 
-                type = southwestern_forest.collision_array[row][column]
+                block_type = southwestern_forest.collision_array[row][column]
 
-                if type is 4:
+                if block_type is 4:
                     return 2, 1 # go to screen 1
                 else:
                     player.collide(collision_list[block])
@@ -556,6 +597,10 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, has_bow)
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
+
+    # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
+    screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
+                         pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
 
     # if the player has acquired the bow and arrow, remove the blockade of rocks
     if has_bow:
@@ -703,19 +748,23 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, has_bow)
 
             entered_screen = True  # the player has now entered the screen
 
+        for boundary in screen_boundaries:
+            if player.hitbox.colliderect(boundary):
+                player.collide(boundary)
+
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
 
                 row = block // len(eastern_forest.collision_array[0])
                 column = block % len(eastern_forest.collision_array[0])
 
-                type = eastern_forest.collision_array[row][column]
+                block_type = eastern_forest.collision_array[row][column]
 
-                if type is 4:
+                if block_type is 4:
                     return 3, 1  # go to screen 1
-                elif type is 5:
+                elif block_type is 5:
                     return 3, 4  # go to screen 4
-                elif type is 6:
+                elif block_type is 6:
                     return 3, 5  # go to screen 5
                 else:
                     player.collide(collision_list[block])
@@ -803,10 +852,23 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
 
+    # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
+    screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
+                         pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
+
     # create a level object, and give it the two arrays created above
     northern_forest = Level(spritesheet, 32, 256, bg_array, fg_array)
     # get a list of rectangles, corresponding to collideable blocks
     collision_list = northern_forest.get_collision_list()
+
+    sign_text = ["This chest contains a bow and some arrows. Use them wisely, because you can run out!",
+                 "The controls are the same as for the sword; whichever direction you are facing is the direction",
+                 "that you will shoot. (left ALT to shoot)",
+                 "You should try practicing on that red enemy over there..."]
+
+    font = pygame.font.SysFont("calibri", 22, True)
+
+    showing_sign = False
 
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
@@ -841,17 +903,17 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
                 return -1
 
             # advance walking animation
-            if event.type == walking_animation_timer:
+            if event.type == walking_animation_timer and not showing_sign:
                 # get the next frame of the animation
                 current_frame = player.animate()
 
             # advance actual positional movement
-            if event.type == walking_movement_timer:
+            if event.type == walking_movement_timer and not showing_sign:
                 # move the player based on their movement speed
                 player.move()
 
             # check keypresses
-            if event.type == check_keypresses_timer:
+            if event.type == check_keypresses_timer and not showing_sign:
 
                 keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
 
@@ -861,10 +923,10 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["up"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True                              # set the up arrow state to True (pressed)
+                        arrow_keys["up"] = True  # set the up arrow state to True (pressed)
 
                 # down is pressed
                 elif keys_pressed[pygame.K_DOWN]:
@@ -872,10 +934,10 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["down"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True                            # set the down arrow state to True
+                        arrow_keys["down"] = True  # set the down arrow state to True
 
                 # right is pressed
                 elif keys_pressed[pygame.K_RIGHT]:
@@ -883,10 +945,10 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["right"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True                           # set the right arrow state to True
+                        arrow_keys["right"] = True  # set the right arrow state to True
 
                 # left is pressed
                 elif keys_pressed[pygame.K_LEFT]:
@@ -894,10 +956,10 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["left"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True                            # set the right arrow state to True
+                        arrow_keys["left"] = True  # set the right arrow state to True
 
                 # up is NOT being pressed
                 if not keys_pressed[pygame.K_UP]:
@@ -917,16 +979,18 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                 # NO arrow keys are being pressed (all False)
                 if not arrow_keys["up"] and not arrow_keys["down"] \
-                   and not arrow_keys["right"] and not arrow_keys["left"]:
-
-                    pygame.time.set_timer(walking_movement_timer, 0)   # shut down the movement timer
+                        and not arrow_keys["right"] and not arrow_keys["left"]:
+                    pygame.time.set_timer(walking_movement_timer, 0)  # shut down the movement timer
                     pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)               # set the current frame to the standing frame
+                    current_frame = player.animate(True)  # set the current frame to the standing frame
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL:
+                if event.key == pygame.K_LCTRL and not showing_sign:
                     player.dodge()
+
+                elif event.key == pygame.K_ESCAPE:
+                    showing_sign = False
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -941,15 +1005,25 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
             entered_screen = True  # the player has now entered the screen
 
+        for boundary in screen_boundaries:
+            if player.hitbox.colliderect(boundary):
+                player.collide(boundary)
+
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
 
                 row = block // len(northern_forest.collision_array[0])
                 column = block % len(northern_forest.collision_array[0])
 
-                type = northern_forest.collision_array[row][column]
+                block_type = northern_forest.collision_array[row][column]
 
-                if type is 4:
+                # collided with a sign, so collide, step back, and set the showing_sign variable to true
+                if block_type is 2:
+                    player.collide(collision_list[block])
+                    player.step_back()
+                    showing_sign = True
+
+                elif block_type is 4:
                     return 4, 3  # go to screen 3
                 else:
                     player.collide(collision_list[block])
@@ -966,6 +1040,12 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
         pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
         pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
+
+        if showing_sign:
+            pygame.draw.rect(screen, (100, 100, 25), (100, 50, 950, 500))
+            for line in sign_text:
+                current_text = font.render(line, True, (0, 0, 0))
+                screen.blit(current_text, (120, 100 + (50 * sign_text.index(line))))
 
         clock.tick(60)  # limit screen updates to 60 fps
 
@@ -1036,10 +1116,20 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
 
+    # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
+    screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
+                         pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
+
     # create a level object, and give it the two arrays created above
     western_forest = Level(spritesheet, 32, 256, bg_array, fg_array)
     # get a list of rectangles, corresponding to collideable blocks
     collision_list = western_forest.get_collision_list()
+
+    sign_text = ["The cave is just up ahead -- beware, though, of what may lay waiting inside!"]
+
+    font = pygame.font.SysFont("calibri", 22, True)
+
+    showing_sign = False
 
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
@@ -1074,17 +1164,17 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
                 return -1
 
             # advance walking animation
-            if event.type == walking_animation_timer:
+            if event.type == walking_animation_timer and not showing_sign:
                 # get the next frame of the animation
                 current_frame = player.animate()
 
             # advance actual positional movement
-            if event.type == walking_movement_timer:
+            if event.type == walking_movement_timer and not showing_sign:
                 # move the player based on their movement speed
                 player.move()
 
             # check keypresses
-            if event.type == check_keypresses_timer:
+            if event.type == check_keypresses_timer and not showing_sign:
 
                 keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
 
@@ -1094,10 +1184,10 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["up"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True                              # set the up arrow state to True (pressed)
+                        arrow_keys["up"] = True  # set the up arrow state to True (pressed)
 
                 # down is pressed
                 elif keys_pressed[pygame.K_DOWN]:
@@ -1105,10 +1195,10 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["down"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True                            # set the down arrow state to True
+                        arrow_keys["down"] = True  # set the down arrow state to True
 
                 # right is pressed
                 elif keys_pressed[pygame.K_RIGHT]:
@@ -1116,10 +1206,10 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["right"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True                           # set the right arrow state to True
+                        arrow_keys["right"] = True  # set the right arrow state to True
 
                 # left is pressed
                 elif keys_pressed[pygame.K_LEFT]:
@@ -1127,10 +1217,10 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                     # only run on the actual keypress:
                     if not arrow_keys["left"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
+                        current_frame = player.animate()  # orient the player with a new frame
+                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
                         pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True                            # set the right arrow state to True
+                        arrow_keys["left"] = True  # set the right arrow state to True
 
                 # up is NOT being pressed
                 if not keys_pressed[pygame.K_UP]:
@@ -1150,16 +1240,18 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
                 # NO arrow keys are being pressed (all False)
                 if not arrow_keys["up"] and not arrow_keys["down"] \
-                   and not arrow_keys["right"] and not arrow_keys["left"]:
-
-                    pygame.time.set_timer(walking_movement_timer, 0)   # shut down the movement timer
+                        and not arrow_keys["right"] and not arrow_keys["left"]:
+                    pygame.time.set_timer(walking_movement_timer, 0)  # shut down the movement timer
                     pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)               # set the current frame to the standing frame
+                    current_frame = player.animate(True)  # set the current frame to the standing frame
 
             # keys that should only register once when pressed
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL:
+                if event.key == pygame.K_LCTRL and not showing_sign:
                     player.dodge()
+
+                elif event.key == pygame.K_ESCAPE:
+                    showing_sign = False
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -1178,17 +1270,27 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
 
             entered_screen = True  # the player has now entered the screen
 
+        for boundary in screen_boundaries:
+            if player.hitbox.colliderect(boundary):
+                player.collide(boundary)
+
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
 
                 row = block // len(western_forest.collision_array[0])
                 column = block % len(western_forest.collision_array[0])
 
-                type = western_forest.collision_array[row][column]
+                block_type = western_forest.collision_array[row][column]
 
-                if type is 4:
+                # collided with a sign, so collide, step back, and set the showing_sign variable to true
+                if block_type is 2:
+                    player.collide(collision_list[block])
+                    player.step_back()
+                    showing_sign = True
+
+                elif block_type is 4:
                     return 5, 3  # go to screen 3
-                elif type is 5:
+                elif block_type is 5:
                     return 5, 6  # go to screen 6
                 else:
                     player.collide(collision_list[block])
@@ -1205,6 +1307,12 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
         pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
         pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
+
+        if showing_sign:
+            pygame.draw.rect(screen, (100, 100, 25), (100, 50, 950, 500))
+            for line in sign_text:
+                current_text = font.render(line, True, (0, 0, 0))
+                screen.blit(current_text, (120, 100 + (50 * sign_text.index(line))))
 
         clock.tick(60)  # limit screen updates to 60 fps
 
@@ -1274,6 +1382,10 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint):
         [29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29],
         [29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,29, 0, 0,29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,29,29]
         ]
+
+    # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
+    screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
+                         pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
 
     # create a level object, and give it the two arrays created above
     cave = Level(spritesheet, 32, 256, bg_array, fg_array)
@@ -1423,13 +1535,17 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint):
             rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
             rude_buster.play(-1)
 
+        for boundary in screen_boundaries:
+            if player.hitbox.colliderect(boundary):
+                player.collide(boundary)
+
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
 
                 row = block // len(cave.collision_array[0])
                 column = block % len(cave.collision_array[0])
 
-                type = cave.collision_array[row][column]
+                block_type = cave.collision_array[row][column]
 
                 player.collide(collision_list[block])
 
