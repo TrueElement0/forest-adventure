@@ -1645,12 +1645,43 @@ if __name__ == "__main__":
     player_east_sword_walking = get_frames(spritesheet, (0, 160, 128, 32), 32)
     player_west_sword_walking = get_frames(spritesheet, (128, 160, 128, 32), 32)
 
-    # put the animations into a list
-    animations = [player_north_sword_walking, player_south_sword_walking,
-                  player_west_sword_walking, player_east_sword_walking]
+    enemy_south_melee_walking = get_frames(spritesheet, (0, 192, 128, 32), 32)
+    enemy_north_melee_walking = get_frames(spritesheet, (128, 192, 128, 32), 32)
+    enemy_east_melee_walking = get_frames(spritesheet, (0, 224, 128, 32), 32)
+    enemy_west_melee_walking = get_frames(spritesheet, (128, 224, 128, 32), 32)
+
+    enemy_south_ranged_walking = get_frames(spritesheet, (0, 256, 128, 32), 32)
+    enemy_north_ranged_walking = get_frames(spritesheet, (128, 256, 128, 32), 32)
+    enemy_east_ranged_walking = get_frames(spritesheet, (0, 288, 128, 32), 32)
+    enemy_west_ranged_walking = get_frames(spritesheet, (128, 288, 128, 32), 32)
+
+    # put player animations into a list
+    player_animations = [player_north_sword_walking, player_south_sword_walking,
+                         player_west_sword_walking, player_east_sword_walking]
 
     # create the player using the animations as well as a bunch of other stats
-    player = Player(7, 20, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), "up", 5, animations)
+    player = Player(7, 20, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), "up", 5, player_animations)
+
+    # put enemy animations into a list
+    enemy_animations = [enemy_north_melee_walking, enemy_south_melee_walking,
+                        enemy_east_melee_walking, enemy_west_melee_walking,
+                        enemy_north_ranged_walking, enemy_south_ranged_walking,
+                        enemy_east_ranged_walking, enemy_west_ranged_walking]
+
+    enemies_list = [[Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)],
+
+                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)
+                     for enemy in range(3)],
+
+                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations),
+                     Enemy("ranged", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)],
+
+                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations),
+                     Enemy("ranged", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)],
+
+                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations),
+                     Enemy("ranged", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations) \
+                    for enemy in range(2)]]
 
     # create a hud using the hud_elements spritesheet and stats from the player
     hud = HUD(hud_elements, pygame.Rect(0, 0, 1152, 210), player.inventory.inventory_dict,

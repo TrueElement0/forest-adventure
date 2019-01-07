@@ -1,6 +1,6 @@
-#!"C:\Users\Element0\Documents\Programming\Python\ICT_ 12\1FinalProject\venv\Scripts\python.exe"
-# EASY-INSTALL-ENTRY-SCRIPT: 'setuptools==28.8.0','console_scripts','easy_install-3.6'
-__requires__ = 'setuptools==28.8.0'
+#!"A:\ICT 12\076-MKURY\ForestAdventure\venv\Scripts\python.exe"
+# EASY-INSTALL-ENTRY-SCRIPT: 'setuptools==39.1.0','console_scripts','easy_install-3.6'
+__requires__ = 'setuptools==39.1.0'
 import re
 import sys
 from pkg_resources import load_entry_point
@@ -8,5 +8,5 @@ from pkg_resources import load_entry_point
 if __name__ == '__main__':
     sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
     sys.exit(
-        load_entry_point('setuptools==28.8.0', 'console_scripts', 'easy_install-3.6')()
+        load_entry_point('setuptools==39.1.0', 'console_scripts', 'easy_install-3.6')()
     )

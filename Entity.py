@@ -256,7 +256,6 @@ class Player:
         DOC
         """
         if self.inventory.current_item == "sword":
-            pygame.time.set_timer("sword_animation", 1/60)
             for enemy in enemies_list:
                 if self.sword_swing.colliderect(enemy.hitbox):
                     enemy.damage(20)
@@ -270,7 +269,6 @@ class Player:
 
             self.inventory.remove("arrows", 1)
             arrow = Arrow(5, self.hitbox.x, self.hitbox.y // 2, self.direction)
-            pygame.time.set_timer("bow_animation", 1/60)
             arrows_list.append(arrow)
 
             return arrows_list
@@ -282,7 +280,6 @@ class Player:
         if "potions" in self.inventory.inventory_dict and self.inventory.inventory_dict["potions"] > 0 \
                 and self.health <= 4:
             self.inventory.inventory_dict["potions"] -= 1
-            pygame.time.set_timer("potion_animation", 1/60)
             self.health = 5  # refill the player's health back up to 5
 
     def move(self):
@@ -371,16 +368,22 @@ class Player:
 
         self.align_sword_swing()  # align the sword_swing hitbox
 
+
 class Enemy:
     """
     DOC
     """
-    def __init__(self, number, enemy_type, move_speed, hitbox, sight_distance, sight_width, direction, total_frames):
+    def __init__(self, enemy_type, move_speed, hitbox, sword_swing, sight_distance, sight_width, direction, health, animations):
         """DOC"""
-        self.number = number
         self.enemy_type = enemy_type
+
         self.move_speed = move_speed
+
         self.hitbox = hitbox
+        self.sword_swing = sword_swing
+        self.swing_x_offset = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
+        self.swing_y_offset = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
+
         self.sight_distance = sight_distance
         self.sight_width = sight_width
         self.direction = direction
@@ -390,6 +393,7 @@ class Enemy:
 
         self.sight_rect = None
         self.align_sight()
+        self.align_sword_swing()
 
     def align_sight(self):
         """
@@ -422,6 +426,12 @@ class Enemy:
             height = self.sight_width
 
             self.sight_rect = pygame.Rect(self.hitbox.x + self.hitbox.width, center_y - (height // 2), width, height)
+
+    def align_sword_swing(self):
+        """Simply centers the sword_swing hitbox around the player's hitbox"""
+        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
+        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+
 
     def animate(self, screen, frames_list, stop=None):
         """
