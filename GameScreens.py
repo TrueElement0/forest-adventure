@@ -5,7 +5,7 @@ from Level import *
 from Entity import *
 
 
-def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
+def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list):
     """
     Screen 1 -- The forest entrance. The player enters from the South and cannot go back through the entrance.
     There is one enemy that spawns, and the player can progress to screen 2 or 3 from this screen.
@@ -96,13 +96,21 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
     entered_screen = False
 
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
+    enemy_frames = []  # initialize a list to hold all the enemy animation frames
+
+    # for every enemy in the level, get the first frame and add it to the frames list
+    for enemy in enemies_list:
+        enemy_frame = enemy.animate(True)
+        enemy_frames.append(enemy_frame)
 
     # pygame timer event ID's used for activating events like animation and movement
     walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
     walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
     check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
+    enemy_animations_timer = pygame.USEREVENT + 4   # timer for animating the enemies
 
-    pygame.time.set_timer(check_keypresses_timer, 5)  # set the keypress check timer to run every 5 milliseconds
+    pygame.time.set_timer(check_keypresses_timer, 5)    # set the keypress check timer to run every 5 milliseconds
+    pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
 
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
@@ -120,7 +128,7 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
             if event.type == pygame.QUIT:
                 return -1
 
-            # advance walking animation
+            # advance player walking animation
             if event.type == walking_animation_timer and not showing_sign:
                 # get the next frame of the animation
                 current_frame = player.animate()
@@ -129,6 +137,13 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
             if event.type == walking_movement_timer and not showing_sign:
                 # move the player based on their movement speed
                 player.move()
+
+            # advance enemy walking animations
+            if event.type == enemy_animations_timer and not showing_sign:
+                # get the next frame of the animation
+                for enemy in range(len(enemies_list)):
+                    enemy_frame = enemies_list[enemy].animate()
+                    enemy_frames[enemy] = enemy_frame
 
             # check keypresses
             if event.type == check_keypresses_timer and not showing_sign:
@@ -273,11 +288,17 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
         # draw the background layer, then the player, then the foreground layer
         forest_entrance.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
+        for enemy in range(len(enemies_list)):
+            screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
         forest_entrance.draw_fg(screen)
 
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
         pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
         pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
+
+        for enemy in enemies_list:
+            pygame.draw.rect(screen, (255, 0, 0), enemy.hitbox, 2)
+            pygame.draw.rect(screen, (0, 255, 0), enemy.sword_swing, 2)
 
         if showing_sign:
             pygame.draw.rect(screen, (100, 100, 25), (100, 50, 950, 500))
@@ -290,7 +311,7 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
+def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list):
     """
     Screen 2 -- The Southwestern forest. The player enters from the East (from screen 1) and can return if they choose.
     There are three enemies that spawn throughout the screen, and one chest at the end of the pathway that
@@ -530,7 +551,7 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, has_bow):
+def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, has_bow):
     """
     Screen 3 -- The Eastern forest. The player enters from the South originally, or the North if they have collected
     the bow and arrows from the Northern screen. There are two enemies that spawn, both melee, on this screen, and one
@@ -787,7 +808,7 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, has_bow)
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
+def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list):
     """
     Screen 4 -- The Northern forest. The player enters from the South and can return (to screen 3) if they choose.
     There are three enemies that spawn on this screen, one ranged enemy on the left, one melee enemy that patrols the
@@ -1052,7 +1073,7 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def western_forest(screen, clock, spritesheet, player, hud, spawnpoint):
+def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list):
     """
     Screen 5 -- The Western forest. The player enters from the east (from screen 3) and can return if they choose.
     The player can also exit through the cave in the North to advance to the bossfight. There are three enemies that
@@ -1567,7 +1588,7 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint):
         pygame.display.flip()  # update the screen with what has just been drawn
 
 
-def screen_handler(screen, clock, spritesheet, hud_elements, player, hud):
+def screen_handler(screen, clock, spritesheet, player, hud, enemies_list):
     """Handles which screens should be called, and anything that goes on in between."""
 
     # stop any music that is playing, and play the forest music in a loop
@@ -1583,31 +1604,31 @@ def screen_handler(screen, clock, spritesheet, hud_elements, player, hud):
 
         if next_screen is 1:
             if prev_screen is 0:
-                returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (704, 608))
+                returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (704, 608), enemies_list[0])
             elif prev_screen is 2:
-                returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (0, 256))
+                returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (0, 256), enemies_list[0])
             elif prev_screen is 3:
-                returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (704, 0))
+                returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (704, 0), enemies_list[0])
 
         elif next_screen is 2:
             if prev_screen is 1:
-                returned_info = southwestern_forest(screen, clock, spritesheet, player, hud, (1120, 256))
+                returned_info = southwestern_forest(screen, clock, spritesheet, player, hud, (1120, 256), enemies_list[1])
 
         elif next_screen is 3:
             if prev_screen is 1:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (704, 608), False)
+                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (704, 608), enemies_list[2],  False)
             elif prev_screen is 4:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (416, 0), True)
+                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (416, 0), enemies_list[2], True)
             elif prev_screen is 5:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (0, 512), True)
+                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (0, 512), enemies_list[2], True)
 
         elif next_screen is 4:
             if prev_screen is 3:
-                returned_info = northern_forest(screen, clock, spritesheet, player, hud, (416, 608))
+                returned_info = northern_forest(screen, clock, spritesheet, player, hud, (416, 608), enemies_list[3])
 
         elif next_screen is 5:
             if prev_screen is 3:
-                returned_info = western_forest(screen, clock, spritesheet, player, hud, (1120, 512))
+                returned_info = western_forest(screen, clock, spritesheet, player, hud, (1120, 512), enemies_list[4])
 
         elif next_screen is 6:
             if prev_screen is 5:
@@ -1645,15 +1666,20 @@ if __name__ == "__main__":
     player_east_sword_walking = get_frames(spritesheet, (0, 160, 128, 32), 32)
     player_west_sword_walking = get_frames(spritesheet, (128, 160, 128, 32), 32)
 
-    enemy_south_melee_walking = get_frames(spritesheet, (0, 192, 128, 32), 32)
-    enemy_north_melee_walking = get_frames(spritesheet, (128, 192, 128, 32), 32)
-    enemy_east_melee_walking = get_frames(spritesheet, (0, 224, 128, 32), 32)
-    enemy_west_melee_walking = get_frames(spritesheet, (128, 224, 128, 32), 32)
+    player_south_bow_walking = get_frames(spritesheet, (0, 192, 128, 32), 32)
+    player_north_bow_walking = get_frames(spritesheet, (128, 192, 128, 32), 32)
+    player_east_bow_walking = get_frames(spritesheet, (0, 224, 128, 32), 32)
+    player_west_bow_walking = get_frames(spritesheet, (128, 224, 128, 32), 32)
 
-    enemy_south_ranged_walking = get_frames(spritesheet, (0, 256, 128, 32), 32)
-    enemy_north_ranged_walking = get_frames(spritesheet, (128, 256, 128, 32), 32)
-    enemy_east_ranged_walking = get_frames(spritesheet, (0, 288, 128, 32), 32)
-    enemy_west_ranged_walking = get_frames(spritesheet, (128, 288, 128, 32), 32)
+    enemy_south_melee_walking = get_frames(spritesheet, (0, 256, 128, 32), 32)
+    enemy_north_melee_walking = get_frames(spritesheet, (128, 256, 128, 32), 32)
+    enemy_east_melee_walking = get_frames(spritesheet, (0, 288, 128, 32), 32)
+    enemy_west_melee_walking = get_frames(spritesheet, (128, 288, 128, 32), 32)
+
+    enemy_south_ranged_walking = get_frames(spritesheet, (0, 320, 128, 32), 32)
+    enemy_north_ranged_walking = get_frames(spritesheet, (128, 320, 128, 32), 32)
+    enemy_east_ranged_walking = get_frames(spritesheet, (0, 352, 128, 32), 32)
+    enemy_west_ranged_walking = get_frames(spritesheet, (128, 352, 128, 32), 32)
 
     # put player animations into a list
     player_animations = [player_north_sword_walking, player_south_sword_walking,
@@ -1664,28 +1690,39 @@ if __name__ == "__main__":
 
     # put enemy animations into a list
     enemy_animations = [enemy_north_melee_walking, enemy_south_melee_walking,
-                        enemy_east_melee_walking, enemy_west_melee_walking,
+                        enemy_west_melee_walking, enemy_east_melee_walking,
                         enemy_north_ranged_walking, enemy_south_ranged_walking,
-                        enemy_east_ranged_walking, enemy_west_ranged_walking]
+                        enemy_west_ranged_walking, enemy_east_ranged_walking]
 
-    enemies_list = [[Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)],
-
-                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)
-                     for enemy in range(3)],
-
-                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations),
-                     Enemy("ranged", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)],
-
-                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations),
-                     Enemy("ranged", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations)],
-
-                    [Enemy("melee", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations),
-                     Enemy("ranged", 6, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), 10, 4, "up", 3, enemy_animations) \
-                    for enemy in range(2)]]
+    # create a two dimensional list containing a list element for each screen, which contains the enemies
+    # that will spawn on the screen.
+    enemies_list = [
+                    [  # SCREEN 1
+                     Enemy("melee", 6, (32, 32), 10, 4, "right", 3, enemy_animations[0:4], (384, 128), 64)
+                    ],
+                    [  # SCREEN 2
+                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
+                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
+                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64)
+                    ],
+                    [  # SCREEN 3
+                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
+                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0))
+                    ],
+                    [  # SCREEN 4
+                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
+                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0))
+                    ],
+                    [  # SCREEN 5
+                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
+                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0)),
+                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0))
+                    ]
+                   ]
 
     # create a hud using the hud_elements spritesheet and stats from the player
     hud = HUD(hud_elements, pygame.Rect(0, 0, 1152, 210), player.inventory.inventory_dict,
               player.inventory.current_item, "SAMPLE TEXT", player.health)
 
     # call the screen handler function used to load screens
-    screen_handler(screen, clock, spritesheet, hud_elements, player, hud)
+    screen_handler(screen, clock, spritesheet, player, hud, enemies_list)

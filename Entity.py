@@ -373,80 +373,102 @@ class Enemy:
     """
     DOC
     """
-    def __init__(self, enemy_type, move_speed, hitbox, sword_swing, sight_distance, sight_width, direction, health, animations):
+    def __init__(self, enemy_type, move_speed, hitbox_size, sight_distance, sight_width, direction, health, animations, spawnpoint, sword_swing=None):
         """DOC"""
         self.enemy_type = enemy_type
 
         self.move_speed = move_speed
 
-        self.hitbox = hitbox
-        self.sword_swing = sword_swing
-        self.swing_x_offset = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
-        self.swing_y_offset = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
+        self.hitbox = pygame.Rect(spawnpoint[0], spawnpoint[1], hitbox_size[0], hitbox_size[1])
+        self.health = health
+
+        if sword_swing is not None:
+            self.sword_swing = pygame.Rect(0, 0, sword_swing, sword_swing)
+            self.swing_x_offset = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
+            self.swing_y_offset = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
 
         self.sight_distance = sight_distance
         self.sight_width = sight_width
         self.direction = direction
 
         self.current_frame = 0
-        self.total_frames = total_frames
+        self.animations = animations
+        self.total_frames = len(self.animations[0])
 
         self.sight_rect = None
         self.align_sight()
-        self.align_sword_swing()
 
     def align_sight(self):
         """
         DOC
         """
+        if self.enemy_type == "melee":
+            center_x = self.hitbox.x + (self.hitbox.width // 2)
+            center_y = self.hitbox.y + (self.hitbox.height // 2)
 
-        center_x = self.hitbox.x + (self.hitbox.width // 2)
-        center_y = self.hitbox.y + (self.hitbox.height // 2)
+            if self.direction == "up":
+                height = self.sight_distance
+                width = self.sight_width
 
-        if self.direction == "up":
-            height = self.sight_distance
-            width = self.sight_width
+                self.sight_rect = pygame.Rect(center_x - (width // 2), self.hitbox.y - height, width, height)
 
-            self.sight_rect = pygame.Rect(center_x - (width // 2), self.hitbox.y - height, width, height)
+            elif self.direction == "down":
+                height = self.sight_distance
+                width = self.sight_width
 
-        elif self.direction == "down":
-            height = self.sight_distance
-            width = self.sight_width
+                self.sight_rect = pygame.Rect(center_x - (width // 2), self.hitbox.y + self.hitbox.height, width, height)
 
-            self.sight_rect = pygame.Rect(center_x - (width // 2), self.hitbox.y + self.hitbox.height, width, height)
+            elif self.direction == "left":
+                width = self.sight_distance
+                height = self.sight_width
 
-        elif self.direction == "left":
-            width = self.sight_distance
-            height = self.sight_width
+                self.sight_rect = pygame.Rect(self.hitbox.x - width, center_y - (height // 2), width, height)
 
-            self.sight_rect = pygame.Rect(self.hitbox.x - width, center_y - (height // 2), width, height)
+            elif self.direction == "right":
+                width = self.sight_distance
+                height = self.sight_width
 
-        elif self.direction == "right":
-            width = self.sight_distance
-            height = self.sight_width
+                self.sight_rect = pygame.Rect(self.hitbox.x + self.hitbox.width, center_y - (height // 2), width, height)
 
-            self.sight_rect = pygame.Rect(self.hitbox.x + self.hitbox.width, center_y - (height // 2), width, height)
+        elif self.enemy_type == "ranged":
+            sight_x_offset = (self.hitbox.width // 2) - (self.sight_width // 2)
+            sight_y_offset = (self.hitbox.height // 2) - (self.sight_distance // 2)
+
+            self.sight_rect = pygame.Rect(self.hitbox.x + sight_x_offset, self.hitbox.y + sight_y_offset,
+                                          self.sight_width, self.sight_distance)
 
     def align_sword_swing(self):
-        """Simply centers the sword_swing hitbox around the player's hitbox"""
-        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
-        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
-
-
-    def animate(self, screen, frames_list, stop=None):
         """
         DOC
         """
-        if stop is not None:
-            if self.current_frame <= self.total_frames:
+        self.sword_swing.x = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
+        self.sword_swing.y = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
+
+    def animate(self, stop=None):
+        """
+        DOC
+        """
+        # animate normally
+        if stop is None:
+            # if the end of the animation has not yet been reached, advance to the next frame
+            if self.current_frame < self.total_frames - 1:
                 self.current_frame += 1
+            # otherwise the end has been reached, so loop back to the beginning
             else:
                 self.current_frame = 0
 
+        # stop on first frame
         else:
             self.current_frame = 0
 
-        screen.blit(frames_list[self.current_frame])
+        if self.direction == "up":
+            return self.animations[0][self.current_frame]
+        elif self.direction == "down":
+            return self.animations[1][self.current_frame]
+        elif self.direction == "left":
+            return self.animations[2][self.current_frame]
+        elif self.direction == "right":
+            return self.animations[3][self.current_frame]
 
     def move(self, path=None):
         """
