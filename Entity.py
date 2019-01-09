@@ -2,6 +2,7 @@
 # Mason Kury
 
 import pygame
+from math import ceil
 
 
 def get_frames(spritesheet, strip_rect, frame_width):
@@ -373,7 +374,7 @@ class Enemy:
     """
     DOC
     """
-    def __init__(self, enemy_type, move_speed, hitbox_size, sight_distance, sight_width, direction, health, animations, spawnpoint, sword_swing=None):
+    def __init__(self, enemy_type, move_speed, hitbox_size, sight_distance, sight_width, direction, health, animations, spawnpoint, path_point=None, sword_swing=None):
         """DOC"""
         self.enemy_type = enemy_type
 
@@ -382,10 +383,13 @@ class Enemy:
         self.hitbox = pygame.Rect(spawnpoint[0], spawnpoint[1], hitbox_size[0], hitbox_size[1])
         self.health = health
 
+        # MAY BE AN ISSUE WITH RANGED ENEMIES WITH NO SWORD_SWING
         if sword_swing is not None:
             self.sword_swing = pygame.Rect(0, 0, sword_swing, sword_swing)
             self.swing_x_offset = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
             self.swing_y_offset = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
+            self.sword_swing.x = self.hitbox.x + self.swing_x_offset
+            self.sword_swing.y = self.hitbox.y + self.swing_y_offset
 
         self.sight_distance = sight_distance
         self.sight_width = sight_width
@@ -397,6 +401,12 @@ class Enemy:
 
         self.sight_rect = None
         self.align_sight()
+
+        self.spawnpoint = spawnpoint
+        self.path = None
+        if path_point is not None:
+            self.path_point = path_point
+            self.calculate_path(self.path_point)
 
     def align_sight(self):
         """
@@ -441,8 +451,33 @@ class Enemy:
         """
         DOC
         """
-        self.sword_swing.x = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
-        self.sword_swing.y = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
+        self.sword_swing.x = self.hitbox.x + self.swing_x_offset
+        self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+
+    def calculate_path(self, target_point):
+        """
+        DOC
+        """
+
+        change_x = target_point[0] - self.hitbox.x
+        change_y = target_point[1] - self.hitbox.y
+
+        x_steps = abs(int(ceil(change_x / self.move_speed)))
+        y_steps = abs(int(ceil(change_y / self.move_speed)))
+
+        self.path = []  # clear the path
+
+        for step in range(x_steps):
+            if change_x > 0:  # positive, so move right
+                self.path.append("right")
+            elif change_x < 0:  # negative so move left
+                self.path.append("left")
+
+        for step in range(y_steps):
+            if change_y > 0:  # positive so move down
+                self.path.append("down")
+            elif change_x < 0:  # negative so move up
+                self.path.append("up")
 
     def animate(self, stop=None):
         """
@@ -470,15 +505,10 @@ class Enemy:
         elif self.direction == "right":
             return self.animations[3][self.current_frame]
 
-    def move(self, path=None):
+    def move(self):
         """
         DOC
         """
-        if path is not None:
-            self.direction = path[0]
-            del path[0]
-
-        self.align_sight()
 
         if self.direction == "up":
             self.hitbox.y -= self.move_speed
@@ -489,9 +519,20 @@ class Enemy:
         elif self.direction == "right":
             self.hitbox.x += self.move_speed
 
-    def chase(self, player):
+        self.align_sight()
+        if self.sword_swing is not None:  # THIS MIGHT BE CAUSING AN ERROR WITH RANGED ENEMIES WITH NO SWORD_SWING
+            self.align_sword_swing()
+
+    def follow_path(self):
         """
         DOC
         """
-        x_distance = player.hitbox.x - self.hitbox.x
-        y_distance = player.hitbox.y - self.hitbox.y
+        if len(self.path) > 0:
+            self.direction = self.path[0]
+            self.move()
+            del self.path[0]
+        else:
+            if self.hitbox.x != self.spawnpoint[0] or self.hitbox.y != self.spawnpoint[1]:
+                self.calculate_path(self.spawnpoint)
+            else:
+                self.calculate_path(self.path_point)

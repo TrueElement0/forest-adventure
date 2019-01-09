@@ -108,9 +108,11 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
     check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
     enemy_animations_timer = pygame.USEREVENT + 4   # timer for animating the enemies
+    enemy_movement_timer = pygame.USEREVENT + 5
 
     pygame.time.set_timer(check_keypresses_timer, 5)    # set the keypress check timer to run every 5 milliseconds
     pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
+    pygame.time.set_timer(enemy_movement_timer, 50)
 
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
@@ -144,6 +146,11 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                 for enemy in range(len(enemies_list)):
                     enemy_frame = enemies_list[enemy].animate()
                     enemy_frames[enemy] = enemy_frame
+
+            if event.type == enemy_movement_timer and not showing_sign:
+                # move the enemies based on their movement speed and current paths
+                for enemy in enemies_list:
+                    enemy.follow_path()
 
             # check keypresses
             if event.type == check_keypresses_timer and not showing_sign:
@@ -299,6 +306,7 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         for enemy in enemies_list:
             pygame.draw.rect(screen, (255, 0, 0), enemy.hitbox, 2)
             pygame.draw.rect(screen, (0, 255, 0), enemy.sword_swing, 2)
+            pygame.draw.rect(screen, (0, 0 ,255), enemy.sight_rect, 2)
 
         if showing_sign:
             pygame.draw.rect(screen, (100, 100, 25), (100, 50, 950, 500))
@@ -1698,25 +1706,25 @@ if __name__ == "__main__":
     # that will spawn on the screen.
     enemies_list = [
                     [  # SCREEN 1
-                     Enemy("melee", 6, (32, 32), 10, 4, "right", 3, enemy_animations[0:4], (384, 128), 64)
+                     Enemy("melee", 6, (32, 32), 250, 100, "right", 3, enemy_animations[0:4], (384, 128), (800, 128), 50)
                     ],
                     [  # SCREEN 2
-                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
-                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
-                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64)
+                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
+                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
+                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64)
                     ],
                     [  # SCREEN 3
-                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
-                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
+                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
                     ],
                     [  # SCREEN 4
-                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
-                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
+                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
                     ],
                     [  # SCREEN 5
-                     Enemy("melee", 6, (32, 32), 10, 4, "up", 3, enemy_animations[0:4], (0, 0), 64),
-                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0)),
-                     Enemy("ranged", 6, (32, 32), 10, 4, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
+                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0)),
+                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
                     ]
                    ]
 
