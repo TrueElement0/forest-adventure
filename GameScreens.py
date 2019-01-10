@@ -108,11 +108,11 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
     check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
     enemy_animations_timer = pygame.USEREVENT + 4   # timer for animating the enemies
-    enemy_movement_timer = pygame.USEREVENT + 5
+    enemy_movement_timer = pygame.USEREVENT + 5     # timer for enemy walking movement
 
     pygame.time.set_timer(check_keypresses_timer, 5)    # set the keypress check timer to run every 5 milliseconds
     pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
-    pygame.time.set_timer(enemy_movement_timer, 50)
+    pygame.time.set_timer(enemy_movement_timer, 50)     # set the enemy movement timer to run every 50 milliseconds
 
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
@@ -148,6 +148,10 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                     enemy_frames[enemy] = enemy_frame
 
             if event.type == enemy_movement_timer and not showing_sign:
+                # check if any enemies can 'see' the player; if so, calculate a path to the player
+                for enemy in enemies_list:
+                    if player.hitbox.colliderect(enemy.sight_rect):
+                        enemy.calculate_path(player.hitbox.topleft)
                 # move the enemies based on their movement speed and current paths
                 for enemy in enemies_list:
                     enemy.follow_path()
@@ -292,7 +296,7 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
 
         hud.draw(screen, (0, 640))
 
-        # draw the background layer, then the player, then the foreground layer
+        # draw the background layer, then the player and enemies, then the foreground layer
         forest_entrance.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         for enemy in range(len(enemies_list)):
@@ -399,13 +403,23 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
     entered_screen = False
 
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
+    enemy_frames = []  # initialize a list to hold all the enemy animation frames
+
+    # for every enemy in the level, get the first frame and add it to the frames list
+    for enemy in enemies_list:
+        enemy_frame = enemy.animate(True)
+        enemy_frames.append(enemy_frame)
 
     # pygame timer event ID's used for activating events like animation and movement
     walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
     walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
     check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
+    enemy_animations_timer = pygame.USEREVENT + 4  # timer for animating the enemies
+    enemy_movement_timer = pygame.USEREVENT + 5  # timer for enemy walking movement
 
     pygame.time.set_timer(check_keypresses_timer, 5)  # set the keypress check timer to run every 5 milliseconds
+    pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
+    pygame.time.set_timer(enemy_movement_timer, 50)  # set the enemy movement timer to run every 50 milliseconds
 
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
@@ -432,6 +446,22 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
             if event.type == walking_movement_timer:
                 # move the player based on their movement speed
                 player.move()
+
+            # advance enemy walking animations
+            if event.type == enemy_animations_timer:
+                # get the next frame of the animation
+                for enemy in range(len(enemies_list)):
+                    enemy_frame = enemies_list[enemy].animate()
+                    enemy_frames[enemy] = enemy_frame
+
+            if event.type == enemy_movement_timer:
+                # check if any enemies can 'see' the player; if so, calculate a path to the player
+                for enemy in enemies_list:
+                    if player.hitbox.colliderect(enemy.sight_rect):
+                        enemy.calculate_path(player.hitbox.topleft)
+                # move the enemies based on their movement speed and current paths
+                for enemy in enemies_list:
+                    enemy.follow_path()
 
             # check keypresses
             if event.type == check_keypresses_timer:
@@ -548,11 +578,17 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
         # draw the background layer, then the player, then the foreground layer
         southwestern_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
+        for enemy in range(len(enemies_list)):
+            screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
         southwestern_forest.draw_fg(screen)
 
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
         pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
         pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
+        for enemy in enemies_list:
+            pygame.draw.rect(screen, (255, 0, 0), enemy.hitbox, 2)
+            pygame.draw.rect(screen, (0, 255, 0), enemy.sword_swing, 2)
+            pygame.draw.rect(screen, (0, 0 ,255), enemy.sight_rect, 2)
 
         clock.tick(60)  # limit screen updates to 60 fps
 
@@ -1706,25 +1742,25 @@ if __name__ == "__main__":
     # that will spawn on the screen.
     enemies_list = [
                     [  # SCREEN 1
-                     Enemy("melee", 6, (32, 32), 250, 100, "right", 3, enemy_animations[0:4], (384, 128), (800, 128), 50)
+                     Enemy("melee", 5, (32, 32), 250, 100, "right", 3, enemy_animations[0:4], (384, 128), (800, 128), 50)
                     ],
                     [  # SCREEN 2
-                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
-                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
-                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64)
+                     Enemy("melee", 4, (32, 32), 250, 175, "down", 3, enemy_animations[0:4], (704, 160), (704, 512), 64),
+                     Enemy("melee", 4, (32, 32), 250, 175, "up", 3, enemy_animations[0:4], (416, 512), (416, 160), 64),
+                     Enemy("melee", 4, (32, 32), 250, 175, "down", 3, enemy_animations[0:4], (128, 160), (128, 512), 64)
                     ],
                     [  # SCREEN 3
-                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
-                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 4, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (0, 0), 64),
+                     Enemy("ranged", 3, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
                     ],
                     [  # SCREEN 4
-                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
-                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 5, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (0, 0), 64),
+                     Enemy("ranged", 4, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
                     ],
                     [  # SCREEN 5
-                     Enemy("melee", 6, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (544, 128), 64),
-                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0)),
-                     Enemy("ranged", 6, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 4, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (0, 0), 64),
+                     Enemy("ranged", 3, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0)),
+                     Enemy("ranged", 3, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
                     ]
                    ]
 

@@ -4,7 +4,7 @@
 import pygame
 
 
-class Level():
+class Level:
     """A level class used for making RPG 'levels' (screens) that will handle collision and interactions from the
     objects and blocks on screen.
 

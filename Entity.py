@@ -2,7 +2,6 @@
 # Mason Kury
 
 import pygame
-from math import ceil
 
 
 def get_frames(spritesheet, strip_rect, frame_width):
@@ -462,8 +461,8 @@ class Enemy:
         change_x = target_point[0] - self.hitbox.x
         change_y = target_point[1] - self.hitbox.y
 
-        x_steps = abs(int(ceil(change_x / self.move_speed)))
-        y_steps = abs(int(ceil(change_y / self.move_speed)))
+        x_steps = abs(int(change_x / self.move_speed))
+        y_steps = abs(int(change_y / self.move_speed))
 
         self.path = []  # clear the path
 
@@ -476,7 +475,7 @@ class Enemy:
         for step in range(y_steps):
             if change_y > 0:  # positive so move down
                 self.path.append("down")
-            elif change_x < 0:  # negative so move up
+            elif change_y < 0:  # negative so move up
                 self.path.append("up")
 
     def animate(self, stop=None):
