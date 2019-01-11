@@ -402,7 +402,7 @@ class Enemy:
         self.align_sight()
 
         self.spawnpoint = spawnpoint
-        self.path = None
+        self.path = []
         if path_point is not None:
             self.path_point = path_point
             self.calculate_path(self.path_point)
@@ -519,7 +519,7 @@ class Enemy:
             self.hitbox.x += self.move_speed
 
         self.align_sight()
-        if self.sword_swing is not None:  # THIS MIGHT BE CAUSING AN ERROR WITH RANGED ENEMIES WITH NO SWORD_SWING
+        if self.enemy_type == "melee":
             self.align_sword_swing()
 
     def follow_path(self):
@@ -533,5 +533,5 @@ class Enemy:
         else:
             if self.hitbox.x != self.spawnpoint[0] or self.hitbox.y != self.spawnpoint[1]:
                 self.calculate_path(self.spawnpoint)
-            else:
+            elif self.enemy_type != "ranged":
                 self.calculate_path(self.path_point)
