@@ -5,6 +5,139 @@ from Level import *
 from Entity import *
 
 
+# global pygame timer event ID's used for activating events like animation and movement
+walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
+walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
+check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
+enemy_animations_timer = pygame.USEREVENT + 4   # timer for animating the enemies
+enemy_movement_timer = pygame.USEREVENT + 5     # timer for enemy walking movement
+
+# set up some global timers that will never stop running
+pygame.time.set_timer(check_keypresses_timer, 5)    # set the keypress check timer to run every 5 milliseconds
+pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
+pygame.time.set_timer(enemy_movement_timer, 50)     # set the enemy movement timer to run every 50 milliseconds
+
+
+def check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign=False):
+    """DOC"""
+
+    # parse pygame events
+    for event in pygame.event.get():
+
+        # user clicked exit
+        if event.type == pygame.QUIT:
+            return -1
+
+        # advance player walking animation
+        if event.type == walking_animation_timer and not showing_sign:
+            # get the next frame of the animation
+            current_frame = player.animate()
+
+        # advance actual positional movement
+        if event.type == walking_movement_timer and not showing_sign:
+            # move the player based on their movement speed
+            player.move()
+
+        # advance enemy walking animations
+        if event.type == enemy_animations_timer and not showing_sign:
+            # get the next frame of the animation
+            for enemy in range(len(enemies_list)):
+                if len(enemies_list[enemy].path) > 0:
+                    enemy_frame = enemies_list[enemy].animate()
+                    enemy_frames[enemy] = enemy_frame
+
+        if event.type == enemy_movement_timer and not showing_sign:
+            # check if any enemies can 'see' the player; if so, calculate a path to the player
+            for enemy in enemies_list:
+                if player.hitbox.colliderect(enemy.sight_rect):
+                    enemy.calculate_path(player.hitbox.topleft)
+            # move the enemies based on their movement speed and current paths
+            for enemy in enemies_list:
+                enemy.follow_path()
+
+        # check keypresses
+        if event.type == check_keypresses_timer and not showing_sign:
+
+            keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
+
+            # up is pressed
+            if keys_pressed[pygame.K_UP]:
+                player.direction = "up"  # update the player direction
+
+                # only run on the actual keypress:
+                if not arrow_keys["up"]:
+                    current_frame = player.animate()  # orient the player with a new frame
+                    pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
+                    pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
+                    arrow_keys["up"] = True  # set the up arrow state to True (pressed)
+
+            # down is pressed
+            elif keys_pressed[pygame.K_DOWN]:
+                player.direction = "down"  # update the player direction
+
+                # only run on the actual keypress:
+                if not arrow_keys["down"]:
+                    current_frame = player.animate()  # orient the player with a new frame
+                    pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
+                    pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
+                    arrow_keys["down"] = True  # set the down arrow state to True
+
+            # right is pressed
+            elif keys_pressed[pygame.K_RIGHT]:
+                player.direction = "right"  # update the player direction
+
+                # only run on the actual keypress:
+                if not arrow_keys["right"]:
+                    current_frame = player.animate()  # orient the player with a new frame
+                    pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
+                    pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
+                    arrow_keys["right"] = True  # set the right arrow state to True
+
+            # left is pressed
+            elif keys_pressed[pygame.K_LEFT]:
+                player.direction = "left"  # update the player direction
+
+                # only run on the actual keypress:
+                if not arrow_keys["left"]:
+                    current_frame = player.animate()  # orient the player with a new frame
+                    pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
+                    pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
+                    arrow_keys["left"] = True  # set the right arrow state to True
+
+            # up is NOT being pressed
+            if not keys_pressed[pygame.K_UP]:
+                arrow_keys["up"] = False
+
+            # down is NOT being pressed
+            if not keys_pressed[pygame.K_DOWN]:
+                arrow_keys["down"] = False
+
+            # right is NOT being pressed
+            if not keys_pressed[pygame.K_RIGHT]:
+                arrow_keys["right"] = False
+
+            # left is NOT being pressed
+            if not keys_pressed[pygame.K_LEFT]:
+                arrow_keys["left"] = False
+
+            # NO arrow keys are being pressed (all False)
+            if not arrow_keys["up"] and not arrow_keys["down"] \
+                    and not arrow_keys["right"] and not arrow_keys["left"]:
+                pygame.time.set_timer(walking_movement_timer, 0)  # shut down the movement timer
+                pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
+                current_frame = player.animate(True)  # set the current frame to the standing frame
+
+        # keys that should only register once when pressed
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LCTRL and not showing_sign:
+                player.dodge()
+
+            elif event.key == pygame.K_ESCAPE:
+                showing_sign = False
+
+    return current_frame, enemy_frames, arrow_keys, showing_sign
+
+
 def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list):
     """
     Screen 1 -- The forest entrance. The player enters from the South and cannot go back through the entrance.
@@ -103,17 +236,6 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         enemy_frame = enemy.animate(True)
         enemy_frames.append(enemy_frame)
 
-    # pygame timer event ID's used for activating events like animation and movement
-    walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
-    walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
-    check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
-    enemy_animations_timer = pygame.USEREVENT + 4   # timer for animating the enemies
-    enemy_movement_timer = pygame.USEREVENT + 5     # timer for enemy walking movement
-
-    pygame.time.set_timer(check_keypresses_timer, 5)    # set the keypress check timer to run every 5 milliseconds
-    pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
-    pygame.time.set_timer(enemy_movement_timer, 50)     # set the enemy movement timer to run every 50 milliseconds
-
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
     # keep setting his direction while the key is pressed. This also helps to determine when no arrow keys are pressed,
@@ -122,121 +244,17 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
 
     # MAIN GAME SCREEN LOOP
     while True:
+        # check all events, such as timers for animation/movement, keypresses, etc.
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
-        # parse pygame events
-        for event in pygame.event.get():
-
-            # user clicked exit
-            if event.type == pygame.QUIT:
-                return -1
-
-            # advance player walking animation
-            if event.type == walking_animation_timer and not showing_sign:
-                # get the next frame of the animation
-                current_frame = player.animate()
-
-            # advance actual positional movement
-            if event.type == walking_movement_timer and not showing_sign:
-                # move the player based on their movement speed
-                player.move()
-
-            # advance enemy walking animations
-            if event.type == enemy_animations_timer and not showing_sign:
-                # get the next frame of the animation
-                for enemy in range(len(enemies_list)):
-                    if len(enemies_list[enemy].path) > 0:
-                        enemy_frame = enemies_list[enemy].animate()
-                        enemy_frames[enemy] = enemy_frame
-
-            if event.type == enemy_movement_timer and not showing_sign:
-                # check if any enemies can 'see' the player; if so, calculate a path to the player
-                for enemy in enemies_list:
-                    if player.hitbox.colliderect(enemy.sight_rect):
-                        enemy.calculate_path(player.hitbox.topleft)
-                # move the enemies based on their movement speed and current paths
-                for enemy in enemies_list:
-                    enemy.follow_path()
-
-            # check keypresses
-            if event.type == check_keypresses_timer and not showing_sign:
-
-                keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
-
-                # up is pressed
-                if keys_pressed[pygame.K_UP]:
-                    player.direction = "up"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["up"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True                              # set the up arrow state to True (pressed)
-
-                # down is pressed
-                elif keys_pressed[pygame.K_DOWN]:
-                    player.direction = "down"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["down"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True                            # set the down arrow state to True
-
-                # right is pressed
-                elif keys_pressed[pygame.K_RIGHT]:
-                    player.direction = "right"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["right"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True                           # set the right arrow state to True
-
-                # left is pressed
-                elif keys_pressed[pygame.K_LEFT]:
-                    player.direction = "left"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["left"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True                            # set the right arrow state to True
-
-                # up is NOT being pressed
-                if not keys_pressed[pygame.K_UP]:
-                    arrow_keys["up"] = False
-
-                # down is NOT being pressed
-                if not keys_pressed[pygame.K_DOWN]:
-                    arrow_keys["down"] = False
-
-                # right is NOT being pressed
-                if not keys_pressed[pygame.K_RIGHT]:
-                    arrow_keys["right"] = False
-
-                # left is NOT being pressed
-                if not keys_pressed[pygame.K_LEFT]:
-                    arrow_keys["left"] = False
-
-                # NO arrow keys are being pressed (all False)
-                if not arrow_keys["up"] and not arrow_keys["down"] \
-                   and not arrow_keys["right"] and not arrow_keys["left"]:
-
-                    pygame.time.set_timer(walking_movement_timer, 0)   # shut down the movement timer
-                    pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)               # set the current frame to the standing frame
-
-            # keys that should only register once when pressed
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL and not showing_sign:
-                    player.dodge()
-
-                elif event.key == pygame.K_ESCAPE:
-                    showing_sign = False
+        if event_data is not -1:
+            # update the animation lists based on the returned data from events, and update the arrow key states
+            current_frame = event_data[0]
+            enemy_frames = event_data[1]
+            arrow_keys = event_data[2]
+            showing_sign = event_data[3]
+        else:
+            return -1
 
         # if the player enters the forest or the player comes in from a different spawn point (already entered)
         if spawnpoint[1] != 608 or (not entered_forest and player.hitbox.y < spawnpoint[1] - player.hitbox.height):
@@ -411,17 +429,6 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
         enemy_frame = enemy.animate(True)
         enemy_frames.append(enemy_frame)
 
-    # pygame timer event ID's used for activating events like animation and movement
-    walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
-    walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
-    check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
-    enemy_animations_timer = pygame.USEREVENT + 4  # timer for animating the enemies
-    enemy_movement_timer = pygame.USEREVENT + 5  # timer for enemy walking movement
-
-    pygame.time.set_timer(check_keypresses_timer, 5)  # set the keypress check timer to run every 5 milliseconds
-    pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
-    pygame.time.set_timer(enemy_movement_timer, 50)  # set the enemy movement timer to run every 50 milliseconds
-
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
     # keep setting his direction while the key is pressed. This also helps to determine when no arrow keys are pressed,
@@ -431,117 +438,16 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
     # MAIN GAME SCREEN LOOP
     while True:
 
-        # parse pygame events
-        for event in pygame.event.get():
+        # check all events, such as timers for animation/movement, keypresses, etc.
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys)
 
-            # user clicked exit
-            if event.type == pygame.QUIT:
-                return -1
-
-            # advance walking animation
-            if event.type == walking_animation_timer:
-                # get the next frame of the animation
-                current_frame = player.animate()
-
-            # advance actual positional movement
-            if event.type == walking_movement_timer:
-                # move the player based on their movement speed
-                player.move()
-
-            # advance enemy walking animations
-            if event.type == enemy_animations_timer:
-                # get the next frame of the animation
-                for enemy in range(len(enemies_list)):
-                    if len(enemies_list[enemy].path) > 0:
-                        enemy_frame = enemies_list[enemy].animate()
-                        enemy_frames[enemy] = enemy_frame
-
-            if event.type == enemy_movement_timer:
-                # check if any enemies can 'see' the player; if so, calculate a path to the player
-                for enemy in enemies_list:
-                    if player.hitbox.colliderect(enemy.sight_rect):
-                        enemy.calculate_path(player.hitbox.topleft)
-                # move the enemies based on their movement speed and current paths
-                for enemy in enemies_list:
-                    enemy.follow_path()
-
-            # check keypresses
-            if event.type == check_keypresses_timer:
-
-                keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
-
-                # up is pressed
-                if keys_pressed[pygame.K_UP]:
-                    player.direction = "up"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["up"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True                              # set the up arrow state to True (pressed)
-
-                # down is pressed
-                elif keys_pressed[pygame.K_DOWN]:
-                    player.direction = "down"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["down"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True                            # set the down arrow state to True
-
-                # right is pressed
-                elif keys_pressed[pygame.K_RIGHT]:
-                    player.direction = "right"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["right"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True                           # set the right arrow state to True
-
-                # left is pressed
-                elif keys_pressed[pygame.K_LEFT]:
-                    player.direction = "left"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["left"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True                            # set the right arrow state to True
-
-                # up is NOT being pressed
-                if not keys_pressed[pygame.K_UP]:
-                    arrow_keys["up"] = False
-
-                # down is NOT being pressed
-                if not keys_pressed[pygame.K_DOWN]:
-                    arrow_keys["down"] = False
-
-                # right is NOT being pressed
-                if not keys_pressed[pygame.K_RIGHT]:
-                    arrow_keys["right"] = False
-
-                # left is NOT being pressed
-                if not keys_pressed[pygame.K_LEFT]:
-                    arrow_keys["left"] = False
-
-                # NO arrow keys are being pressed (all False)
-                if not arrow_keys["up"] and not arrow_keys["down"] \
-                   and not arrow_keys["right"] and not arrow_keys["left"]:
-
-                    pygame.time.set_timer(walking_movement_timer, 0)   # shut down the movement timer
-                    pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)               # set the current frame to the standing frame
-
-            # keys that should only register once when pressed
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL:
-                    player.dodge()
+        if event_data is not -1:
+            # update the animation lists based on the returned data from events, and update the arrow key states
+            current_frame = event_data[0]
+            enemy_frames = event_data[1]
+            arrow_keys = event_data[2]
+        else:
+            return -1
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -695,17 +601,6 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         enemy_frame = enemy.animate(True)
         enemy_frames.append(enemy_frame)
 
-    # pygame timer event ID's used for activating events like animation and movement
-    walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
-    walking_movement_timer = pygame.USEREVENT + 2  # timer for walking movement
-    check_keypresses_timer = pygame.USEREVENT + 3  # timer for checking user keyboard input
-    enemy_animations_timer = pygame.USEREVENT + 4  # timer for animating the enemies
-    enemy_movement_timer = pygame.USEREVENT + 5  # timer for enemy walking movement
-
-    pygame.time.set_timer(check_keypresses_timer, 5)  # set the keypress check timer to run every 5 milliseconds
-    pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
-    pygame.time.set_timer(enemy_movement_timer, 50)  # set the enemy movement timer to run every 50 milliseconds
-
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
     # keep setting his direction while the key is pressed. This also helps to determine when no arrow keys are pressed,
@@ -715,117 +610,16 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     # MAIN GAME SCREEN LOOP
     while True:
 
-        # parse pygame events
-        for event in pygame.event.get():
+        # check all events, such as timers for animation/movement, keypresses, etc.
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys)
 
-            # user clicked exit
-            if event.type == pygame.QUIT:
-                return -1
-
-            # advance walking animation
-            if event.type == walking_animation_timer:
-                # get the next frame of the animation
-                current_frame = player.animate()
-
-            # advance actual positional movement
-            if event.type == walking_movement_timer:
-                # move the player based on their movement speed
-                player.move()
-
-            # advance enemy walking animations
-            if event.type == enemy_animations_timer:
-                # get the next frame of the animation
-                for enemy in range(len(enemies_list)):
-                    if len(enemies_list[enemy].path) > 0:
-                        enemy_frame = enemies_list[enemy].animate()
-                        enemy_frames[enemy] = enemy_frame
-
-            if event.type == enemy_movement_timer:
-                # check if any enemies can 'see' the player; if so, calculate a path to the player
-                for enemy in enemies_list:
-                    if player.hitbox.colliderect(enemy.sight_rect):
-                        enemy.calculate_path(player.hitbox.topleft)
-                # move the enemies based on their movement speed and current paths
-                for enemy in enemies_list:
-                    enemy.follow_path()
-
-            # check keypresses
-            if event.type == check_keypresses_timer:
-
-                keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
-
-                # up is pressed
-                if keys_pressed[pygame.K_UP]:
-                    player.direction = "up"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["up"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True                              # set the up arrow state to True (pressed)
-
-                # down is pressed
-                elif keys_pressed[pygame.K_DOWN]:
-                    player.direction = "down"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["down"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True                            # set the down arrow state to True
-
-                # right is pressed
-                elif keys_pressed[pygame.K_RIGHT]:
-                    player.direction = "right"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["right"]:
-                        current_frame = player.animate()                      # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)     # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer,  200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True                            # set the right arrow state to True
-
-                # left is pressed
-                elif keys_pressed[pygame.K_LEFT]:
-                    player.direction = "left"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["left"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True                            # set the right arrow state to True
-
-                # up is NOT being pressed
-                if not keys_pressed[pygame.K_UP]:
-                    arrow_keys["up"] = False
-
-                # down is NOT being pressed
-                if not keys_pressed[pygame.K_DOWN]:
-                    arrow_keys["down"] = False
-
-                # right is NOT being pressed
-                if not keys_pressed[pygame.K_RIGHT]:
-                    arrow_keys["right"] = False
-
-                # left is NOT being pressed
-                if not keys_pressed[pygame.K_LEFT]:
-                    arrow_keys["left"] = False
-
-                # NO arrow keys are being pressed (all False)
-                if not arrow_keys["up"] and not arrow_keys["down"] \
-                   and not arrow_keys["right"] and not arrow_keys["left"]:
-
-                    pygame.time.set_timer(walking_movement_timer, 0)   # shut down the movement timer
-                    pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)               # set the current frame to the standing frame
-
-            # keys that should only register once when pressed
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL:
-                    player.dodge()
+        if event_data is not -1:
+            # update the animation lists based on the returned data from events, and update the arrow key states
+            current_frame = event_data[0]
+            enemy_frames = event_data[1]
+            arrow_keys = event_data[2]
+        else:
+            return -1
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -987,17 +781,6 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         enemy_frame = enemy.animate(True)
         enemy_frames.append(enemy_frame)
 
-    # pygame timer event ID's used for activating events like animation and movement
-    walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
-    walking_movement_timer = pygame.USEREVENT + 2  # timer for walking movement
-    check_keypresses_timer = pygame.USEREVENT + 3  # timer for checking user keyboard input
-    enemy_animations_timer = pygame.USEREVENT + 4  # timer for animating the enemies
-    enemy_movement_timer = pygame.USEREVENT + 5  # timer for enemy walking movement
-
-    pygame.time.set_timer(check_keypresses_timer, 5)  # set the keypress check timer to run every 5 milliseconds
-    pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
-    pygame.time.set_timer(enemy_movement_timer, 50)  # set the enemy movement timer to run every 50 milliseconds
-
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
     # keep setting his direction while the key is pressed. This also helps to determine when no arrow keys are pressed,
@@ -1007,119 +790,17 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     # MAIN GAME SCREEN LOOP
     while True:
 
-        # parse pygame events
-        for event in pygame.event.get():
+        # check all events, such as timers for animation/movement, keypresses, etc.
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
-            # user clicked exit
-            if event.type == pygame.QUIT:
-                return -1
-
-            # advance walking animation
-            if event.type == walking_animation_timer and not showing_sign:
-                # get the next frame of the animation
-                current_frame = player.animate()
-
-            # advance actual positional movement
-            if event.type == walking_movement_timer and not showing_sign:
-                # move the player based on their movement speed
-                player.move()
-
-            # advance enemy walking animations
-            if event.type == enemy_animations_timer:
-                # get the next frame of the animation
-                for enemy in range(len(enemies_list)):
-                    if len(enemies_list[enemy].path) > 0:
-                        enemy_frame = enemies_list[enemy].animate()
-                        enemy_frames[enemy] = enemy_frame
-
-            if event.type == enemy_movement_timer and not showing_sign:
-                # check if any enemies can 'see' the player; if so, calculate a path to the player
-                for enemy in enemies_list:
-                    if player.hitbox.colliderect(enemy.sight_rect):
-                            enemy.calculate_path(player.hitbox.topleft)
-                # move the enemies based on their movement speed and current paths
-                for enemy in enemies_list:
-                    enemy.follow_path()
-
-            # check keypresses
-            if event.type == check_keypresses_timer and not showing_sign:
-
-                keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
-
-                # up is pressed
-                if keys_pressed[pygame.K_UP]:
-                    player.direction = "up"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["up"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True  # set the up arrow state to True (pressed)
-
-                # down is pressed
-                elif keys_pressed[pygame.K_DOWN]:
-                    player.direction = "down"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["down"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True  # set the down arrow state to True
-
-                # right is pressed
-                elif keys_pressed[pygame.K_RIGHT]:
-                    player.direction = "right"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["right"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True  # set the right arrow state to True
-
-                # left is pressed
-                elif keys_pressed[pygame.K_LEFT]:
-                    player.direction = "left"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["left"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True  # set the right arrow state to True
-
-                # up is NOT being pressed
-                if not keys_pressed[pygame.K_UP]:
-                    arrow_keys["up"] = False
-
-                # down is NOT being pressed
-                if not keys_pressed[pygame.K_DOWN]:
-                    arrow_keys["down"] = False
-
-                # right is NOT being pressed
-                if not keys_pressed[pygame.K_RIGHT]:
-                    arrow_keys["right"] = False
-
-                # left is NOT being pressed
-                if not keys_pressed[pygame.K_LEFT]:
-                    arrow_keys["left"] = False
-
-                # NO arrow keys are being pressed (all False)
-                if not arrow_keys["up"] and not arrow_keys["down"] \
-                        and not arrow_keys["right"] and not arrow_keys["left"]:
-                    pygame.time.set_timer(walking_movement_timer, 0)  # shut down the movement timer
-                    pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)  # set the current frame to the standing frame
-
-            # keys that should only register once when pressed
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL and not showing_sign:
-                    player.dodge()
-
-                elif event.key == pygame.K_ESCAPE:
-                    showing_sign = False
+        if event_data is not -1:
+            # update the animation lists based on the returned data from events, and update the arrow key states
+            current_frame = event_data[0]
+            enemy_frames = event_data[1]
+            arrow_keys = event_data[2]
+            showing_sign = event_data[3]
+        else:
+            return -1
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -1283,17 +964,6 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         enemy_frame = enemy.animate(True)
         enemy_frames.append(enemy_frame)
 
-    # pygame timer event ID's used for activating events like animation and movement
-    walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
-    walking_movement_timer = pygame.USEREVENT + 2  # timer for walking movement
-    check_keypresses_timer = pygame.USEREVENT + 3  # timer for checking user keyboard input
-    enemy_animations_timer = pygame.USEREVENT + 4  # timer for animating the enemies
-    enemy_movement_timer = pygame.USEREVENT + 5  # timer for enemy walking movement
-
-    pygame.time.set_timer(check_keypresses_timer, 5)  # set the keypress check timer to run every 5 milliseconds
-    pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
-    pygame.time.set_timer(enemy_movement_timer, 50)  # set the enemy movement timer to run every 50 milliseconds
-
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
     # keep setting his direction while the key is pressed. This also helps to determine when no arrow keys are pressed,
@@ -1303,119 +973,17 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     # MAIN GAME SCREEN LOOP
     while True:
 
-        # parse pygame events
-        for event in pygame.event.get():
+        # check all events, such as timers for animation/movement, keypresses, etc.
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
-            # user clicked exit
-            if event.type == pygame.QUIT:
-                return -1
-
-            # advance walking animation
-            if event.type == walking_animation_timer and not showing_sign:
-                # get the next frame of the animation
-                current_frame = player.animate()
-
-            # advance actual positional movement
-            if event.type == walking_movement_timer and not showing_sign:
-                # move the player based on their movement speed
-                player.move()
-
-            # advance enemy walking animations
-            if event.type == enemy_animations_timer:
-                # get the next frame of the animation
-                for enemy in range(len(enemies_list)):
-                    if len(enemies_list[enemy].path) > 0:
-                        enemy_frame = enemies_list[enemy].animate()
-                        enemy_frames[enemy] = enemy_frame
-
-            if event.type == enemy_movement_timer and not showing_sign:
-                # check if any enemies can 'see' the player; if so, calculate a path to the player
-                for enemy in enemies_list:
-                    if player.hitbox.colliderect(enemy.sight_rect):
-                        enemy.calculate_path(player.hitbox.topleft)
-                # move the enemies based on their movement speed and current paths
-                for enemy in enemies_list:
-                    enemy.follow_path()
-
-            # check keypresses
-            if event.type == check_keypresses_timer and not showing_sign:
-
-                keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
-
-                # up is pressed
-                if keys_pressed[pygame.K_UP]:
-                    player.direction = "up"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["up"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True  # set the up arrow state to True (pressed)
-
-                # down is pressed
-                elif keys_pressed[pygame.K_DOWN]:
-                    player.direction = "down"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["down"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True  # set the down arrow state to True
-
-                # right is pressed
-                elif keys_pressed[pygame.K_RIGHT]:
-                    player.direction = "right"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["right"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True  # set the right arrow state to True
-
-                # left is pressed
-                elif keys_pressed[pygame.K_LEFT]:
-                    player.direction = "left"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["left"]:
-                        current_frame = player.animate()  # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)  # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True  # set the right arrow state to True
-
-                # up is NOT being pressed
-                if not keys_pressed[pygame.K_UP]:
-                    arrow_keys["up"] = False
-
-                # down is NOT being pressed
-                if not keys_pressed[pygame.K_DOWN]:
-                    arrow_keys["down"] = False
-
-                # right is NOT being pressed
-                if not keys_pressed[pygame.K_RIGHT]:
-                    arrow_keys["right"] = False
-
-                # left is NOT being pressed
-                if not keys_pressed[pygame.K_LEFT]:
-                    arrow_keys["left"] = False
-
-                # NO arrow keys are being pressed (all False)
-                if not arrow_keys["up"] and not arrow_keys["down"] \
-                        and not arrow_keys["right"] and not arrow_keys["left"]:
-                    pygame.time.set_timer(walking_movement_timer, 0)  # shut down the movement timer
-                    pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)  # set the current frame to the standing frame
-
-            # keys that should only register once when pressed
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL and not showing_sign:
-                    player.dodge()
-
-                elif event.key == pygame.K_ESCAPE:
-                    showing_sign = False
+        if event_data is not -1:
+            # update the animation lists based on the returned data from events, and update the arrow key states
+            current_frame = event_data[0]
+            enemy_frames = event_data[1]
+            arrow_keys = event_data[2]
+            showing_sign = event_data[3]
+        else:
+            return -1
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or

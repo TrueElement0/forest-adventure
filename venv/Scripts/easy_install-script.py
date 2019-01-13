@@ -1,4 +1,4 @@
-#!"A:\ICT 12\076-MKURY\ForestAdventure\venv\Scripts\python.exe"
+#!"C:\Users\Element0\Documents\Programming\Python\ICT_ 12\ForestAdventure\venv\Scripts\python.exe"
 # EASY-INSTALL-ENTRY-SCRIPT: 'setuptools==39.1.0','console_scripts','easy_install'
 __requires__ = 'setuptools==39.1.0'
 import re
