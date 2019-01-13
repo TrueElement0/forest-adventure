@@ -11,14 +11,18 @@ walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
 check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
 enemy_animations_timer = pygame.USEREVENT + 4   # timer for animating the enemies
 enemy_movement_timer = pygame.USEREVENT + 5     # timer for enemy walking movement
+reset_dodge_timer = pygame.USEREVENT + 6
 
 # set up some global timers that will never stop running
 pygame.time.set_timer(check_keypresses_timer, 5)    # set the keypress check timer to run every 5 milliseconds
 pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
 pygame.time.set_timer(enemy_movement_timer, 50)     # set the enemy movement timer to run every 50 milliseconds
+pygame.time.set_timer(reset_dodge_timer, 1000)      # set a timer to reset the dodge ability every 1000 milliseconds
+
+#pygame.time.set_timer(reset_dodge_timer, 10)  # TEMPORARY QUICK MOVEMENT FOR DEBUGGING PURPOSES
 
 
-def check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign=False):
+def check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign=False):
     """DOC"""
 
     # parse pygame events
@@ -54,6 +58,9 @@ def check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, 
             # move the enemies based on their movement speed and current paths
             for enemy in enemies_list:
                 enemy.follow_path()
+
+        if event.type == reset_dodge_timer and not showing_sign:
+            can_dodge = True
 
         # check keypresses
         if event.type == check_keypresses_timer and not showing_sign:
@@ -129,13 +136,14 @@ def check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, 
 
         # keys that should only register once when pressed
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LCTRL and not showing_sign:
+            if event.key == pygame.K_LCTRL and can_dodge and not showing_sign:
                 player.dodge()
+                can_dodge = False
 
             elif event.key == pygame.K_ESCAPE:
                 showing_sign = False
 
-    return current_frame, enemy_frames, arrow_keys, showing_sign
+    return current_frame, enemy_frames, arrow_keys, can_dodge, showing_sign
 
 
 def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list):
@@ -225,6 +233,8 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
+    can_dodge = True
+
     entered_forest = False
     entered_screen = False
 
@@ -245,14 +255,15 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     # MAIN GAME SCREEN LOOP
     while True:
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
+        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            showing_sign = event_data[3]
+            can_dodge = event_data[3]
+            showing_sign = event_data[4]
         else:
             return -1
 
@@ -414,10 +425,14 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
     # get a list of rectangles, corresponding to collideable blocks
     collision_list = southwestern_forest.get_collision_list()
 
+    chest_contents = {"health potion":1, "gold":50}
+
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
+
+    can_dodge = True
 
     entered_screen = False
 
@@ -439,13 +454,14 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys)
+        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
+            can_dodge = event_data[3]
         else:
             return -1
 
@@ -476,6 +492,15 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
 
                 if block_type is 4:
                     return 2, 1 # go to screen 1
+                elif block_type is 3:
+                    # remove the chest from the fg_array and collision array, and update the collision_list
+                    southwestern_forest.fg_array[row][column] = 0
+                    southwestern_forest.collision_array[row][column] = 0
+                    collision_list = southwestern_forest.get_collision_list()
+
+                    # add the chest contents to the player's inventory
+                    for item in chest_contents.keys():
+                        player.inventory.add(item, chest_contents[item])
                 else:
                     player.collide(collision_list[block])
 
@@ -586,10 +611,14 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     # get a list of rectangles, corresponding to collideable blocks
     collision_list = eastern_forest.get_collision_list()
 
+    chest_contents = {"health potion":1, "gold":75}
+
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
+
+    can_dodge = True
 
     entered_screen = False
 
@@ -611,13 +640,14 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys)
+        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
+            can_dodge = event_data[3]
         else:
             return -1
 
@@ -654,6 +684,15 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                     return 3, 4  # go to screen 4
                 elif block_type is 6:
                     return 3, 5  # go to screen 5
+                elif block_type is 3:
+                    # remove the chest from the fg_array and collision array, and update the collision_list
+                    eastern_forest.fg_array[row][column] = 0
+                    eastern_forest.collision_array[row][column] = 0
+                    collision_list = eastern_forest.get_collision_list()
+
+                    # add the chest contents to the player's inventory
+                    for item in chest_contents.keys():
+                        player.inventory.add(item, chest_contents[item])
                 else:
                     player.collide(collision_list[block])
 
@@ -766,10 +805,14 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
 
     showing_sign = False
 
+    chest_contents = {"bow":1, "arrows":10, "health potion":1, "gold":100}
+
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
+
+    can_dodge = True
 
     entered_screen = False
 
@@ -791,14 +834,15 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
+        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            showing_sign = event_data[3]
+            can_dodge = event_data[3]
+            showing_sign = event_data[4]
         else:
             return -1
 
@@ -832,6 +876,16 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                     player.collide(collision_list[block])
                     player.step_back()
                     showing_sign = True
+
+                elif block_type is 3:
+                    # remove the chest from the fg_array and collision array, and update the collision_list
+                    northern_forest.fg_array[row][column] = 0
+                    northern_forest.collision_array[row][column] = 0
+                    collision_list = northern_forest.get_collision_list()
+
+                    # add the chest contents to the player's inventory
+                    for item in chest_contents.keys():
+                        player.inventory.add(item, chest_contents[item])
 
                 elif block_type is 4:
                     return 4, 3  # go to screen 3
@@ -949,10 +1003,14 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
 
     showing_sign = False
 
+    chest_contents = {"arrows": 25, "health potion":1, "gold":150}
+
     # spawn in the player at the specified coordinates
     player.hitbox.x = spawnpoint[0]
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
+
+    can_dodge = True
 
     entered_screen = False
 
@@ -974,14 +1032,15 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
+        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            showing_sign = event_data[3]
+            can_dodge = event_data[3]
+            showing_sign = event_data[4]
         else:
             return -1
 
@@ -1019,6 +1078,16 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                     player.collide(collision_list[block])
                     player.step_back()
                     showing_sign = True
+
+                elif block_type is 3:
+                    # remove the chest from the fg_array and collision array, and update the collision_list
+                    western_forest.fg_array[row][column] = 0
+                    western_forest.collision_array[row][column] = 0
+                    collision_list = western_forest.get_collision_list()
+
+                    # add the chest contents to the player's inventory
+                    for item in chest_contents.keys():
+                        player.inventory.add(item, chest_contents[item])
 
                 elif block_type is 4:
                     return 5, 3  # go to screen 3
@@ -1358,6 +1427,8 @@ def screen_handler(screen, clock, spritesheet, player, hud, enemies_list):
 
         prev_screen = returned_info[0]
         next_screen = returned_info[1]
+
+        print(player.inventory.inventory_dict)
 
     pygame.quit()
     print("Thanks for playing!")

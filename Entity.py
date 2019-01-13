@@ -67,7 +67,10 @@ class Inventory:
 
         Returns: (none)
         """
-        self.inventory_dict[item] = number  # add the item(s) to the inventory_dict
+        if item in self.inventory_dict:
+            self.inventory_dict[item] += number  # add the item(s) to the inventory_dict
+        else:
+            self.inventory_dict[item] = number  # otherwise create the item in the dict and add it
 
     def delete(self, item):
         """
