@@ -1174,7 +1174,8 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
 
         for enemy in enemies_list:
             pygame.draw.rect(screen, (255, 0, 0), enemy.hitbox, 2)
-            pygame.draw.rect(screen, (0, 255, 0), enemy.sword_swing, 2)
+            if enemy.enemy_type == "melee":
+                    pygame.draw.rect(screen, (0, 255, 0), enemy.sword_swing, 2)
             pygame.draw.rect(screen, (0, 0 ,255), enemy.sight_rect, 2)
 
         if showing_sign:
@@ -1475,7 +1476,8 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
 
         for enemy in enemies_list:
             pygame.draw.rect(screen, (255, 0, 0), enemy.hitbox, 2)
-            pygame.draw.rect(screen, (0, 255, 0), enemy.sword_swing, 2)
+            if enemy.enemy_type == "melee":
+                    pygame.draw.rect(screen, (0, 255, 0), enemy.sword_swing, 2)
             pygame.draw.rect(screen, (0, 0 ,255), enemy.sight_rect, 2)
 
         if showing_sign:
@@ -1850,22 +1852,22 @@ if __name__ == "__main__":
                      Enemy("melee", 5, (32, 32), 250, 100, "right", 3, enemy_animations[0:4], (384, 128), (800, 128), 50)
                     ],
                     [  # SCREEN 2
-                     Enemy("melee", 4, (32, 32), 250, 175, "down", 3, enemy_animations[0:4], (704, 160), (704, 512), 64),
-                     Enemy("melee", 4, (32, 32), 250, 175, "up", 3, enemy_animations[0:4], (416, 512), (416, 160), 64),
+                     Enemy("melee", 4, (32, 32), 250, 175, "down", 3, enemy_animations[0:4], (688, 160), (688, 512), 64),
+                     Enemy("melee", 4, (32, 32), 250, 175, "up", 3, enemy_animations[0:4], (400, 512), (400, 160), 64),
                      Enemy("melee", 4, (32, 32), 250, 175, "down", 3, enemy_animations[0:4], (128, 160), (128, 512), 64)
                     ],
                     [  # SCREEN 3
-                     Enemy("melee", 4, (32, 32), 250, 100, "left", 3, enemy_animations[0:4], (960, 160), (384, 160), 64),
-                     Enemy("ranged", 3, (32, 32), 300, 300, "up", 3, enemy_animations[4:], (320, 448))
+                     Enemy("melee", 4, (32, 32), 250, 100, "left", 3, enemy_animations[0:4], (960, 128), (384, 128), 64),
+                     Enemy("ranged", 3, (32, 32), 300, 300, "up", 3, enemy_animations[4:], (224, 512))
                     ],
                     [  # SCREEN 4
-                     Enemy("melee", 5, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (0, 0), 64),
-                     Enemy("ranged", 4, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 5, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (992, 480), (992, 128), 64),
+                     Enemy("ranged", 4, (32, 32), 300, 300, "up", 3, enemy_animations[4:], (176, 416))
                     ],
                     [  # SCREEN 5
-                     Enemy("melee", 4, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (0, 0), (0, 0), 64),
-                     Enemy("ranged", 3, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0)),
-                     Enemy("ranged", 3, (32, 32), 250, 100, "up", 3, enemy_animations[4:], (0, 0))
+                     Enemy("melee", 6, (32, 32), 250, 200, "right", 3, enemy_animations[0:4], (96, 512), (544, 512), 64),
+                     Enemy("ranged", 4, (32, 32), 300, 300, "down", 3, enemy_animations[4:], (544, 96)),
+                     Enemy("ranged", 4, (32, 32), 300, 300, "down", 3, enemy_animations[4:], (672, 96))
                     ]
                    ]
 
