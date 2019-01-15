@@ -6,23 +6,23 @@ from Entity import *
 
 
 # global pygame timer event ID's used for activating events like animation and movement
-walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
-walking_movement_timer = pygame.USEREVENT + 2   # timer for walking movement
-check_keypresses_timer = pygame.USEREVENT + 3   # timer for checking user keyboard input
-enemy_animations_timer = pygame.USEREVENT + 4   # timer for animating the enemies
-enemy_movement_timer = pygame.USEREVENT + 5     # timer for enemy walking movement
-reset_dodge_timer = pygame.USEREVENT + 6
+walking_animation_timer = pygame.USEREVENT + 0  # timer for walking frame animation
+walking_movement_timer = pygame.USEREVENT + 1   # timer for walking movement
+check_keypresses_timer = pygame.USEREVENT + 2   # timer for checking user keyboard input
+enemy_animations_timer = pygame.USEREVENT + 3   # timer for animating the enemies
+enemy_movement_timer = pygame.USEREVENT + 4     # timer for enemy walking movement
+reset_player_abilities = pygame.USEREVENT + 5   # timer for controlling the speed of player abilities
+enemy_attack_timer = pygame.USEREVENT + 6       # timer for controlling the enemies' attack speeds
 
 # set up some global timers that will never stop running
-pygame.time.set_timer(check_keypresses_timer, 5)    # set the keypress check timer to run every 5 milliseconds
-pygame.time.set_timer(enemy_animations_timer, 200)  # set the enemy animations timer to run every 200 milliseconds
-pygame.time.set_timer(enemy_movement_timer, 50)     # set the enemy movement timer to run every 50 milliseconds
-pygame.time.set_timer(reset_dodge_timer, 1000)      # set a timer to reset the dodge ability every 1000 milliseconds
+pygame.time.set_timer(check_keypresses_timer, 5)     # set the keypress check timer to run every 5 milliseconds
+pygame.time.set_timer(enemy_animations_timer, 200)   # set the enemy animations timer to run every 200 milliseconds
+pygame.time.set_timer(enemy_movement_timer, 50)      # set the enemy movement timer to run every 50 milliseconds
+pygame.time.set_timer(enemy_attack_timer, 1000)      # set the enemy attack timer to run every 1000 milliseconds
+pygame.time.set_timer(reset_player_abilities, 1000)  # set a timer to reset the dodge ability every 1000 milliseconds
 
-#pygame.time.set_timer(reset_dodge_timer, 10)  # TEMPORARY QUICK MOVEMENT FOR DEBUGGING PURPOSES
 
-
-def check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign=False):
+def check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign=False):
     """DOC"""
 
     # parse pygame events
@@ -46,7 +46,10 @@ def check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, a
         if event.type == enemy_animations_timer and not showing_sign:
             # get the next frame of the animation
             for enemy in range(len(enemies_list)):
-                if len(enemies_list[enemy].path) > 0:
+                if enemies_list[enemy].attacking:
+                    enemy_frame = enemies_list[enemy].animate(True)
+                    enemy_frames[enemy] = enemy_frame
+                elif len(enemies_list[enemy].path) > 0:
                     enemy_frame = enemies_list[enemy].animate()
                     enemy_frames[enemy] = enemy_frame
 
@@ -57,10 +60,19 @@ def check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, a
                     enemy.calculate_path(player.hitbox.topleft)
             # move the enemies based on their movement speed and current paths
             for enemy in enemies_list:
-                enemy.follow_path()
+                if not enemy.attacking:
+                    enemy.follow_path()
 
-        if event.type == reset_dodge_timer and not showing_sign:
-            can_dodge = True
+        if event.type == reset_player_abilities and not showing_sign:
+            player.can_dodge = True
+            player.can_use_item = True
+
+        if event.type == enemy_attack_timer:
+            for enemy in enemies_list:
+                if enemy.attacking:
+                    if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
+                        player.health -= 1
+                    enemy.attacking = False
 
         # check keypresses
         if event.type == check_keypresses_timer and not showing_sign:
@@ -136,14 +148,18 @@ def check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, a
 
         # keys that should only register once when pressed
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LCTRL and can_dodge and not showing_sign:
+            if event.key == pygame.K_LCTRL and player.can_dodge and not showing_sign:
                 player.dodge()
-                can_dodge = False
+                player.can_dodge = False
+
+            elif event.key == pygame.K_LALT and player.can_use_item and not showing_sign:
+                player.use_item(enemies_list)
+                player.can_use_item = False
 
             elif event.key == pygame.K_ESCAPE:
                 showing_sign = False
 
-    return current_frame, enemy_frames, arrow_keys, can_dodge, showing_sign
+    return current_frame, enemy_frames, arrow_keys, showing_sign
 
 
 def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list):
@@ -233,8 +249,6 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
-    can_dodge = True
-
     entered_forest = False
     entered_screen = False
 
@@ -255,15 +269,14 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     # MAIN GAME SCREEN LOOP
     while True:
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            can_dodge = event_data[3]
-            showing_sign = event_data[4]
+            showing_sign = event_data[3]
         else:
             return -1
 
@@ -322,6 +335,12 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                 else:
                     player.collide(collision_list[block])
 
+        for enemy in enemies_list:
+            if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
+                enemy.attacking = True
+            if enemy.hitbox.colliderect(player.hitbox):
+                player.collide(enemy.hitbox)
+
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
         hud.draw(screen, (0, 640))
@@ -330,7 +349,11 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         forest_entrance.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         for enemy in range(len(enemies_list)):
-            screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            if not enemies_list[enemy].dead:
+                screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            else:
+                del enemies_list[enemy]
+                break  # exit the loop to avoid index errors, and there's no way the enemy killed two enemies at once...
         forest_entrance.draw_fg(screen)
 
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
@@ -454,14 +477,13 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys)
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            can_dodge = event_data[3]
         else:
             return -1
 
@@ -504,6 +526,12 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
                 else:
                     player.collide(collision_list[block])
 
+        for enemy in enemies_list:
+            if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
+                enemy.attacking = True
+            if enemy.hitbox.colliderect(player.hitbox):
+                player.collide(enemy.hitbox)
+
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
         hud.draw(screen, (0, 640))
@@ -512,7 +540,11 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
         southwestern_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         for enemy in range(len(enemies_list)):
-            screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            if not enemies_list[enemy].dead:
+                screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            else:
+                del enemies_list[enemy]
+                break  # exit the loop to avoid index errors, and there's no way the enemy killed two enemies at once...
         southwestern_forest.draw_fg(screen)
 
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
@@ -618,8 +650,6 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
-    can_dodge = True
-
     entered_screen = False
 
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
@@ -640,14 +670,13 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys)
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            can_dodge = event_data[3]
         else:
             return -1
 
@@ -696,6 +725,12 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                 else:
                     player.collide(collision_list[block])
 
+        for enemy in enemies_list:
+            if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
+                enemy.attacking = True
+            if enemy.hitbox.colliderect(player.hitbox):
+                player.collide(enemy.hitbox)
+
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
         hud.draw(screen, (0, 640))
@@ -704,7 +739,11 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         eastern_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         for enemy in range(len(enemies_list)):
-            screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            if not enemies_list[enemy].dead:
+                screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            else:
+                del enemies_list[enemy]
+                break  # exit the loop to avoid index errors, and there's no way the enemy killed two enemies at once...
         eastern_forest.draw_fg(screen)
 
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
@@ -812,8 +851,6 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
-    can_dodge = True
-
     entered_screen = False
 
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
@@ -834,15 +871,14 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            can_dodge = event_data[3]
-            showing_sign = event_data[4]
+            showing_sign = event_data[3]
         else:
             return -1
 
@@ -892,6 +928,12 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                 else:
                     player.collide(collision_list[block])
 
+        for enemy in enemies_list:
+            if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
+                enemy.attacking = True
+            if enemy.hitbox.colliderect(player.hitbox):
+                player.collide(enemy.hitbox)
+
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
         hud.draw(screen, (0, 640))
@@ -900,7 +942,11 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         northern_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         for enemy in range(len(enemies_list)):
-            screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            if not enemies_list[enemy].dead:
+                screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            else:
+                del enemies_list[enemy]
+                break  # exit the loop to avoid index errors, and there's no way the enemy killed two enemies at once...
         northern_forest.draw_fg(screen)
 
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
@@ -1010,8 +1056,6 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     player.hitbox.y = spawnpoint[1]
     player.align_sword_swing()  # align the secondary sword hitbox to be centered with the player hitbox
 
-    can_dodge = True
-
     entered_screen = False
 
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
@@ -1032,15 +1076,14 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
     while True:
 
         # check all events, such as timers for animation/movement, keypresses, etc.
-        event_data = check_events(player, can_dodge, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
+        event_data = check_events(player, current_frame, enemies_list, enemy_frames, arrow_keys, showing_sign)
 
         if event_data is not -1:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             enemy_frames = event_data[1]
             arrow_keys = event_data[2]
-            can_dodge = event_data[3]
-            showing_sign = event_data[4]
+            showing_sign = event_data[3]
         else:
             return -1
 
@@ -1096,6 +1139,12 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                 else:
                     player.collide(collision_list[block])
 
+        for enemy in enemies_list:
+            if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
+                enemy.attacking = True
+            if enemy.hitbox.colliderect(player.hitbox):
+                player.collide(enemy.hitbox)
+
         screen.fill((255, 255, 255))  # (reset the screen with white)
 
         hud.draw(screen, (0, 640))
@@ -1104,7 +1153,11 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         western_forest.draw_bg(screen)
         screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
         for enemy in range(len(enemies_list)):
-            screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            if not enemies_list[enemy].dead:
+                screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
+            else:
+                del enemies_list[enemy]
+                break  # exit the loop to avoid index errors, and there's no way the enemy killed two enemies at once...
         western_forest.draw_fg(screen)
 
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing

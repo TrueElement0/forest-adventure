@@ -197,6 +197,8 @@ class Player:
         """Initializes the player object, and creates some other attributes used for animation and combat"""
         self.move_speed = move_speed
         self.dodge_distance = dodge_distance
+        self.can_dodge = True
+        self.can_use_item = True
 
         self.hitbox = hitbox
         self.sword_swing = sword_swing
@@ -206,6 +208,8 @@ class Player:
         self.direction = direction
 
         self.health = health
+        self.total_health = health
+        self.dead = False
 
         self.current_frame = 0
         self.animations = animations
@@ -254,22 +258,27 @@ class Player:
             elif self.direction == "right":
                 return self.animations[3][self.current_frame]
 
+    def use_item(self, enemies_list):
+        if self.inventory.current_item == "sword":
+            self.sword_attack(enemies_list)
+        elif self.inventory.current_item == "bow":
+            self.bow_attack(enemies_list)
+        elif self.inventory.current_item == "health potion":
+            self.drink_potion()
+
     def sword_attack(self, enemies_list):
         """
         DOC
         """
-        if self.inventory.current_item == "sword":
-            for enemy in enemies_list:
-                if self.sword_swing.colliderect(enemy.hitbox):
-                    enemy.damage(20)
+        for enemy in enemies_list:
+            if self.sword_swing.colliderect(enemy.hitbox):
+                enemy.damage(1)
 
     def bow_attack(self, arrows_list):
         """
         DOC
         """
-        if self.inventory.current_item == "bow" and "arrows" in self.inventory.inventory_dict and \
-                self.inventory.inventory_dict["arrows"] > 0:
-
+        if "arrows" in self.inventory.inventory_dict and self.inventory.inventory_dict["arrows"] > 0:
             self.inventory.remove("arrows", 1)
             arrow = Arrow(5, self.hitbox.x, self.hitbox.y // 2, self.direction)
             arrows_list.append(arrow)
@@ -281,9 +290,17 @@ class Player:
         DOC
         """
         if "potions" in self.inventory.inventory_dict and self.inventory.inventory_dict["potions"] > 0 \
-                and self.health <= 4:
+                and self.health < self.total_health:
             self.inventory.inventory_dict["potions"] -= 1
-            self.health = 5  # refill the player's health back up to 5
+            self.health = self.total_health  # refill the player's health back up to the maximum
+
+    def damage(self, damage):
+        """
+        DOC
+        """
+        self.health -= damage
+        if damage <= 0:
+            self.dead = True
 
     def move(self):
         """
@@ -384,6 +401,7 @@ class Enemy:
 
         self.hitbox = pygame.Rect(spawnpoint[0], spawnpoint[1], hitbox_size[0], hitbox_size[1])
         self.health = health
+        self.dead = False
 
         # MAY BE AN ISSUE WITH RANGED ENEMIES WITH NO SWORD_SWING
         if sword_swing is not None:
@@ -392,6 +410,8 @@ class Enemy:
             self.swing_y_offset = (self.hitbox.height // 2) - (self.sword_swing.height // 2)
             self.sword_swing.x = self.hitbox.x + self.swing_x_offset
             self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+
+        self.attacking = False
 
         self.sight_distance = sight_distance
         self.sight_width = sight_width
@@ -455,6 +475,14 @@ class Enemy:
         """
         self.sword_swing.x = self.hitbox.x + self.swing_x_offset
         self.sword_swing.y = self.hitbox.y + self.swing_y_offset
+
+    def damage(self, damage):
+        """
+        DOC
+        """
+        self.health -= damage
+        if self.health <= 0:
+            self.dead = True
 
     def calculate_path(self, target_point):
         """
