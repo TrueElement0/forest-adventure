@@ -16,7 +16,7 @@ def get_frames(spritesheet, strip_rect, frame_width):
 
     Returns: list with elements of type pygame.Surface; the list of animation strip frames.
     """
-    # calculate the number of frames by getting the number of frames accross, and multiplying by the number of frames
+    # calculate the number of frames by getting the number of frames across, and multiplying by the number of frames
     # down. (in an animation strip, the number of frames down would just be one.)
     num_frames = (strip_rect[2] // frame_width) * strip_rect[3] // frame_width
 
@@ -566,3 +566,33 @@ class Enemy:
                 self.calculate_path(self.spawnpoint)
             elif self.enemy_type != "ranged":
                 self.calculate_path(self.path_point)
+
+    def collide(self, block):
+        """
+        Determines the appropriate movement for the player when a collision happens.
+
+        Parameters:
+             block: must be of type pygame.Rect; the block that the player has collided with.
+
+        Returns: (none)
+        """
+
+        # if the player was moving up and the block is actually above the player, move to to the bottom of the block
+        if self.direction == "up" and block.y < self.hitbox.y:
+            self.hitbox.y = block.bottom
+        # if the player was moving down and the block is actually below the player, move to to the top of the block
+        elif self.direction == "down" and block.y > self.hitbox.y:
+            self.hitbox.y = block.top - self.hitbox.height
+        # if the player was moving left and the block is actually to the left of the player,
+        # move to to the right of the block
+        elif self.direction == "left" and block.x < self.hitbox.x:
+            self.hitbox.x = block.right
+        # if the player was moving right and the block is actually to the right of the player,
+        # move to to the left of the block
+        elif self.direction == "right" and block.x > self.hitbox.x:
+            self.hitbox.x = block.left - self.hitbox.width
+
+        self.align_sight()
+
+        if self.enemy_type == "melee":
+            self.align_sword_swing()  # align the sword_swing hitbox

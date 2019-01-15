@@ -1497,9 +1497,10 @@ if __name__ == "__main__":
     # load the tileset and entity spritesheet
     spritesheet = pygame.image.load("Images/spritesheet.png").convert_alpha()
     hud_elements = pygame.image.load("Images/hud_elements.png").convert_alpha()
+    icon = pygame.image.load("Images/icon.png").convert_alpha()
 
     pygame.display.set_caption("Forest Adventure")  # set the caption on the top of the window
-    # SET ICON
+    pygame.display.set_icon(icon)  # set the icon to the icon image
 
     clock = pygame.time.Clock()  # create a clock object used to control the drawing rate
 
