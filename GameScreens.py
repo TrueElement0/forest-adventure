@@ -78,7 +78,7 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
                     if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
                         player.health -= 1
                     elif enemy.enemy_type == "ranged" and enemy.sight_rect.colliderect(player.hitbox):
-                        arrow = Arrow(arrow_image, (32, 32), 8, enemy.hitbox.x, enemy.hitbox.y)
+                        arrow = Arrow(arrow_image, (32, 32), 10, enemy.hitbox.x, enemy.hitbox.y)
                         arrow.face_target((player.hitbox.x, player.hitbox.y))
                         enemy_arrows.append(arrow)
                     enemy.attacking = False
@@ -173,7 +173,19 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
             elif event.key == pygame.K_ESCAPE:
                 showing_sign = False
 
+            elif event.key == pygame.K_1:
+                player.inventory.set_item(1)
+            elif event.key == pygame.K_2:
+                player.inventory.set_item(2)
+            elif event.key == pygame.K_3:
+                player.inventory.set_item(3)
+            elif event.key == pygame.K_4:
+                player.inventory.set_item(4)
+            elif event.key == pygame.K_5:
+                player.inventory.set_item(5)
+
     return current_frame, player_arrows, enemy_frames, enemy_arrows, arrow_keys, showing_sign
+
 
 def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, debug_mode, showing_sign=False, sign_text=None, font=None):
     """
@@ -198,9 +210,18 @@ def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemie
             # was somehow killed at once, the other one will be removed one tick later (1/60 seconds)
 
     for arrow in player_arrows:
-        arrow.draw(screen)
+        if not arrow.hit:
+            arrow.draw(screen)
+        else:
+            player_arrows.remove(arrow)
+            break
     for arrow in enemy_arrows:
-        arrow.draw(screen)
+        if not arrow.hit:
+            arrow.draw(screen)
+        else:
+            enemy_arrows.remove(arrow)
+            break
+    print(len(player_arrows), len(enemy_arrows))
 
     level.draw_fg(screen)
 
@@ -393,8 +414,8 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                         enemy.align_sword_swing()
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
+
 
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
@@ -419,8 +440,7 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
 
             for arrow in player_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
 
         for enemy in enemies_list:
             if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
@@ -430,9 +450,8 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
-                    del arrow
+                    arrow.hit = True
                     enemy.damage(1)
-                    break
 
         draw(screen, clock, forest_entrance, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True, showing_sign, sign_text, font)
 
@@ -579,8 +598,8 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
                         enemy.align_sword_swing()
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
+
 
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
@@ -606,8 +625,8 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
 
             for arrow in player_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
+
 
         for enemy in enemies_list:
             if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
@@ -617,15 +636,13 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
-                    del arrow
+                    arrow.hit = True
                     enemy.damage(1)
-                    break
 
         for arrow in enemy_arrows:
             if arrow.hitbox.colliderect(player.hitbox):
-                del arrow
+                arrow.hit = True
                 player.health -= 1
-                break
 
         draw(screen, clock, southwestern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True)
 
@@ -780,12 +797,11 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                         enemy.align_sword_swing()
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
+
             for arrow in enemy_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
 
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
@@ -815,12 +831,11 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
 
             for arrow in player_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
+
             for arrow in enemy_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
 
         for enemy in enemies_list:
             if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
@@ -832,15 +847,14 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
-                    del arrow
+                    arrow.hit = True
                     enemy.damage(1)
-                    break
+
 
         for arrow in enemy_arrows:
             if arrow.hitbox.colliderect(player.hitbox):
-                del arrow
+                arrow.hit = True
                 player.health -= 1
-                break
 
         draw(screen, clock, eastern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True)
 
@@ -997,12 +1011,11 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                         enemy.align_sword_swing()
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
+
             for arrow in enemy_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
 
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
@@ -1035,12 +1048,11 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
 
             for arrow in player_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
+
             for arrow in enemy_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
 
         for enemy in enemies_list:
             if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
@@ -1052,15 +1064,14 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
-                    del arrow
+                    arrow.hit = True
                     enemy.damage(1)
-                    break
+
 
         for arrow in enemy_arrows:
             if arrow.hitbox.colliderect(player.hitbox):
-                del arrow
+                arrow.hit = True
                 player.health -= 1
-                break
 
         draw(screen, clock, northern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True, showing_sign, sign_text, font)
 
@@ -1217,12 +1228,11 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                         enemy.align_sword_swing()
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
+
             for arrow in enemy_arrows:
                 if arrow.hitbox.colliderect(boundary):
-                    del arrow
-                    break
+                    arrow.hit = True
 
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
@@ -1257,12 +1267,11 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
 
             for arrow in player_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
+
             for arrow in enemy_arrows:
                 if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
-                    del arrow
-                    break
+                    arrow.hit = True
 
         for enemy in enemies_list:
             if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
@@ -1274,15 +1283,13 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
-                    del arrow
+                    arrow.hit = True
                     enemy.damage(1)
-                    break
 
         for arrow in enemy_arrows:
             if arrow.hitbox.colliderect(player.hitbox):
-                del arrow
+                arrow.hit = True
                 player.health -= 1
-                break
 
         draw(screen, clock, western_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True, showing_sign, sign_text, font)
 
@@ -1575,7 +1582,9 @@ def screen_handler():
 
     # put player animations into a list
     player_animations = [player_north_sword_walking, player_south_sword_walking,
-                         player_west_sword_walking, player_east_sword_walking]
+                         player_west_sword_walking, player_east_sword_walking,
+                         player_north_bow_walking, player_south_bow_walking,
+                         player_west_bow_walking, player_east_bow_walking]
 
     # create the player using the animations as well as a bunch of other stats
     player = Player(7, 20, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), "up", 5, player_animations)
@@ -1599,16 +1608,16 @@ def screen_handler():
         ],
         [  # SCREEN 3
             Enemy("melee", 4, (32, 32), 250, 100, "left", 3, enemy_animations[0:4], (960, 128), (384, 128), 55),
-            Enemy("ranged", 3, (32, 32), 300, 300, "up", 3, enemy_animations[4:], (224, 512))
+            Enemy("ranged", 3, (32, 32), 450, 450, "up", 3, enemy_animations[4:], (224, 512))
         ],
         [  # SCREEN 4
             Enemy("melee", 5, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (992, 480), (992, 128), 55),
-            Enemy("ranged", 4, (32, 32), 300, 300, "up", 3, enemy_animations[4:], (176, 416))
+            Enemy("ranged", 4, (32, 32), 350, 350, "up", 3, enemy_animations[4:], (176, 416))
         ],
         [  # SCREEN 5
             Enemy("melee", 6, (32, 32), 250, 200, "right", 3, enemy_animations[0:4], (96, 512), (544, 512), 64),
-            Enemy("ranged", 4, (32, 32), 300, 300, "down", 3, enemy_animations[4:], (544, 96)),
-            Enemy("ranged", 4, (32, 32), 300, 300, "down", 3, enemy_animations[4:], (672, 96))
+            Enemy("ranged", 4, (32, 32), 400, 400, "down", 3, enemy_animations[4:], (544, 96)),
+            Enemy("ranged", 4, (32, 32), 400, 400, "down", 3, enemy_animations[4:], (672, 96))
         ]
     ]
 
@@ -1623,7 +1632,7 @@ def screen_handler():
     scarlet_forest = pygame.mixer.Sound("Audio/scarlet_forest.ogg")
     scarlet_forest.play(-1)
 
-    returned_info = (1, 3)
+    returned_info = (3, 4)
     prev_screen = returned_info[0]
     next_screen = returned_info[1]
 

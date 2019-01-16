@@ -151,6 +151,8 @@ class Arrow:
 
         self.hitbox = pygame.Rect(x, y, hitbox[0], hitbox[1])
 
+        self.hit = False
+
     def move(self):
         """
         DOC
@@ -203,7 +205,7 @@ class Arrow:
         """
         if direction == "up":
             self.image = pygame.transform.rotate(self.original_image, 90)
-            self.velocity_y = self.move_speed
+            self.velocity_y = -1 * self.move_speed
             self.velocity_x = 0
         elif direction == "left":
             self.image = pygame.transform.rotate(self.original_image, 180)
@@ -211,7 +213,7 @@ class Arrow:
             self.velocity_y = 0
         elif direction == "down":
             self.image = pygame.transform.rotate(self.original_image, 270)
-            self.velocity_y = -1 * self.move_speed
+            self.velocity_y = self.move_speed
             self.velocity_x = 0
         else:
             self.image = self.original_image
@@ -317,14 +319,24 @@ class Player:
                 return self.animations[2][self.current_frame]
             elif self.direction == "right":
                 return self.animations[3][self.current_frame]
-
-    def use_item(self, enemies_list):
-        if self.inventory.current_item == "sword":
-            self.sword_attack(enemies_list)
         elif self.inventory.current_item == "bow":
-            self.bow_attack()
-        elif self.inventory.current_item == "health potion":
-            self.drink_potion()
+            if self.direction == "up":
+                return self.animations[4][self.current_frame]
+            elif self.direction == "down":
+                return self.animations[5][self.current_frame]
+            elif self.direction == "left":
+                return self.animations[6][self.current_frame]
+            elif self.direction == "right":
+                return self.animations[7][self.current_frame]
+        else:
+            if self.direction == "up":
+                return self.animations[0][self.current_frame]
+            elif self.direction == "down":
+                return self.animations[1][self.current_frame]
+            elif self.direction == "left":
+                return self.animations[2][self.current_frame]
+            elif self.direction == "right":
+                return self.animations[3][self.current_frame]
 
     def sword_attack(self, enemies_list):
         """
@@ -340,7 +352,7 @@ class Player:
         """
         if "arrows" in self.inventory.inventory_dict and self.inventory.inventory_dict["arrows"] > 0:
             self.inventory.remove("arrows", 1)
-            arrow = Arrow(arrow_image, (32, 32), 9, self.hitbox.x//2, self.hitbox.y//2)
+            arrow = Arrow(arrow_image, (32, 32), 10, self.hitbox.x, self.hitbox.y)
             arrow.face_direction(self.direction)
 
             arrows_list.append(arrow)
