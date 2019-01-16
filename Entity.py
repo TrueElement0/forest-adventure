@@ -2,6 +2,7 @@
 # Mason Kury
 
 import pygame
+import math
 
 
 def get_frames(spritesheet, strip_rect, frame_width):
@@ -33,7 +34,10 @@ def get_frames(spritesheet, strip_rect, frame_width):
                                                                                   # onto the surface
         frames.append(frame)                                                      # add the frame to the list of frames
 
-    return frames  # return the list of frames
+    if len(frames) > 1:
+        return frames  # return the list of frames
+    else:
+        return frames[0]  # return only the one singular frame
 
 
 class Inventory:
@@ -136,33 +140,89 @@ class Arrow:
     """
     DOC
     """
-    def __init__(self, move_speed, x, y, direction):
+    def __init__(self, image, hitbox, move_speed, x, y):
         """DOC"""
         self.move_speed = move_speed
-        self.direction = direction
+        self.velocity_x = 0
+        self.velocity_y = 0
 
-        if self.direction == "up" or self.direction == "down":
-            self.hitbox = pygame.Rect(x, y, 5, 32)
-        elif self.direction == "left" or self.direction == "right":
-            self.hitbox = pygame.Rect(x, y, 23, 5)
+        self.original_image = image
+        self.image = image
+
+        self.hitbox = pygame.Rect(x, y, hitbox[0], hitbox[1])
 
     def move(self):
         """
         DOC
         """
-        if self.direction == "up":
-            self.hitbox.y -= self.move_speed
-        elif self.direction == "down":
-            self.hitbox.y += self.move_speed
-        elif self.direction == "left":
-            self.hitbox.x -= self.move_speed
-        elif self.direction == "right":
-            self.hitbox.x += self.move_speed
+        self.hitbox.x += self.velocity_x
+        self.hitbox.y += self.velocity_y
 
-    def draw(self):
+    def face_target(self, target):
         """
         DOC
         """
+        change_x = target[0] - self.hitbox.x
+        change_y = -1 * (target[1] - self.hitbox.y)  # y must be inverted for trig calculations because positive y
+                                                     # is down on a computer monitor
+        diagonal = math.sqrt(change_x**2 + change_y**2)
+
+        # first two statements avoid division by 0
+        if change_x == 0:
+            if change_y < 0:
+                self.face_direction("up")
+                return None
+            elif change_y > 0:
+                self.face_direction("down")
+                return None
+        elif change_y == 0:
+            if change_x > 0:
+                self.face_direction("right")
+                return None
+            elif change_x < 0:
+                self.face_direction("left")
+                return None
+        elif change_x > 0 and change_y > 0:  # angle will be in quadrant 1
+            angle = math.degrees(math.asin(change_y/diagonal))
+        elif change_x < 0 and change_y > 0:  # angle will be in quadrant 2
+            angle = 180 - math.degrees(math.asin(change_y/diagonal))
+        elif change_x < 0 and change_y < 0:  # angle will be in quadrant 3
+            angle = 180 + math.degrees(math.atan(change_y/change_x))
+        else:  # angle will be in quadrant 4
+            angle = 360 - math.degrees(math.acos(change_x/diagonal))
+
+        self.image = pygame.transform.rotate(self.original_image, angle)
+
+        self.velocity_x = (self.move_speed/diagonal) * change_x
+        self.velocity_y = (self.move_speed/diagonal) * change_y * -1  # y velocity must be inverted because positive y
+                                                                      # is down on a computer monitor
+
+    def face_direction(self, direction):
+        """
+        DOC
+        """
+        if direction == "up":
+            self.image = pygame.transform.rotate(self.original_image, 90)
+            self.velocity_y = self.move_speed
+            self.velocity_x = 0
+        elif direction == "left":
+            self.image = pygame.transform.rotate(self.original_image, 180)
+            self.velocity_x = -1 * self.move_speed
+            self.velocity_y = 0
+        elif direction == "down":
+            self.image = pygame.transform.rotate(self.original_image, 270)
+            self.velocity_y = -1 * self.move_speed
+            self.velocity_x = 0
+        else:
+            self.image = self.original_image
+            self.velocity_x = self.move_speed
+            self.velocity_y = 0
+
+    def draw(self, surface):
+        """
+        DOC
+        """
+        surface.blit(self.image, (self.hitbox.x, self.hitbox.y))
 
 
 class Player:
@@ -262,7 +322,7 @@ class Player:
         if self.inventory.current_item == "sword":
             self.sword_attack(enemies_list)
         elif self.inventory.current_item == "bow":
-            self.bow_attack(enemies_list)
+            self.bow_attack()
         elif self.inventory.current_item == "health potion":
             self.drink_potion()
 
@@ -274,15 +334,16 @@ class Player:
             if self.sword_swing.colliderect(enemy.hitbox):
                 enemy.damage(1)
 
-    def bow_attack(self, arrows_list):
+    def bow_attack(self,arrow_image, arrows_list):
         """
         DOC
         """
         if "arrows" in self.inventory.inventory_dict and self.inventory.inventory_dict["arrows"] > 0:
             self.inventory.remove("arrows", 1)
-            arrow = Arrow(5, self.hitbox.x, self.hitbox.y // 2, self.direction)
-            arrows_list.append(arrow)
+            arrow = Arrow(arrow_image, (32, 32), 9, self.hitbox.x//2, self.hitbox.y//2)
+            arrow.face_direction(self.direction)
 
+            arrows_list.append(arrow)
             return arrows_list
 
     def drink_potion(self):
