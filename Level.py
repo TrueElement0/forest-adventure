@@ -182,10 +182,10 @@ class Level:
 class HUD:
     """DOC"""
 
-    def __init__(self, spritesheet, base_rect, inventory_dict, current_item, quest_text, health, boss_health=None):
+    def __init__(self, hud_list, base_rect, inventory_dict, current_item, quest_text, health, boss_health=None):
         """DOC"""
 
-        self.spritesheet = spritesheet
+        self.hud_list = hud_list
         self.base_rect = base_rect
         self.inventory_dict = inventory_dict
         self.current_item = current_item
@@ -193,9 +193,62 @@ class HUD:
         self.health = health
         self.boss_health = boss_health
 
-        self.hud = pygame.Surface(base_rect.size, pygame.SRCALPHA)
-        self.hud.blit(spritesheet, (0, 0), base_rect)
+    def update(self, player, boss=None):
+        self.inventory_dict = player.inventory.inventory_dict
+        self.current_item = player.inventory.current_item
+        self.health = player.health
+
+        if boss is not None:
+            self.boss_health = boss.health
 
     def draw(self, screen, coordinates):
         """DOC"""
-        screen.blit(self.hud, coordinates)
+
+
+        font = pygame.font.SysFont("calibri", 22, True)
+
+        screen.blit(self.hud_list[0], coordinates)
+
+        for item in range(len(self.inventory_dict)):
+
+            item_name = list(self.inventory_dict.keys())[item]
+            item_amount = list(self.inventory_dict.values())[item]
+
+            # get the correct image for the current item to be drawn
+            if item_name == "sword":
+                image = self.hud_list[1]
+            elif item_name == "bow":
+                image = self.hud_list[2]
+            elif item_name == "health potion":
+                image = self.hud_list[3]
+            elif item_name == "arrows":
+                image = self.hud_list[4]
+            elif item_name == "gold":
+                image = self.hud_list[5]
+
+            x = (coordinates[0] + 10) + (160 * item)
+            y = coordinates[1] + 30
+
+            screen.blit(image, (x, y))
+
+            if not item_name in ("sword", "bow"):
+                current_number = font.render(str(item_amount), True, (0, 0, 0))
+
+                x_offset = (13 * (len(str(item_amount)) - 1)) + 30
+                screen.blit(current_number, (x + 160 - x_offset, y + 120))
+
+            if list(self.inventory_dict.keys())[item] == self.current_item:
+                screen.blit(self.hud_list[6], (x, y))
+
+        for heart in range(self.health):
+            x_offset = 32 * heart
+            screen.blit(self.hud_list[7], (coordinates[0] + (820 + x_offset), coordinates[1] + 30))
+
+        if self.boss_health is not None:
+            for boss_heart in range(self.boss_health):
+                x_offset = 32 * boss_heart
+                screen.blit(self.hud_list[8], (coordinates[0] + (820 + x_offset), coordinates[1] + 65))
+
+        for line in range(len(self.quest_text)):
+            text = font.render(self.quest_text[line], True, (0, 0, 0))
+            screen.blit(text, (coordinates[0] + 820, (coordinates[1] + 110) + (20 * line)))

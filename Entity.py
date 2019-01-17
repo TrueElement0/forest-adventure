@@ -39,6 +39,15 @@ def get_frames(spritesheet, strip_rect, frame_width):
     else:
         return frames[0]  # return only the one singular frame
 
+def get_image(spritesheet, frame_rect):
+    """
+    DOC
+    """
+    frame = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
+    frame.blit(spritesheet, (0, 0), frame_rect)
+
+    return frame
+
 
 class Inventory:
     """
@@ -61,6 +70,25 @@ class Inventory:
 
         self.inventory_dict = {"sword": self.sword, "gold": self.gold}
 
+    def sort(self):
+        """
+        DOC
+        """
+        sorted_inventory = {}
+
+        if "sword" in self.inventory_dict:
+            sorted_inventory["sword"] = self.inventory_dict["sword"]
+        if "bow" in self.inventory_dict:
+            sorted_inventory["bow"] = self.inventory_dict["bow"]
+        if "health potion" in self.inventory_dict:
+            sorted_inventory["health potion"] = self.inventory_dict["health potion"]
+        if "arrows" in self.inventory_dict:
+            sorted_inventory["arrows"] = self.inventory_dict["arrows"]
+        if "gold" in self.inventory_dict:
+            sorted_inventory["gold"] = self.inventory_dict["gold"]
+
+        self.inventory_dict = sorted_inventory
+
     def add(self, item, number):
         """
         Adds an item(s) to the player's inventory.
@@ -75,6 +103,8 @@ class Inventory:
             self.inventory_dict[item] += number  # add the item(s) to the inventory_dict
         else:
             self.inventory_dict[item] = number  # otherwise create the item in the dict and add it
+
+        self.sort()
 
     def delete(self, item):
         """
@@ -91,6 +121,9 @@ class Inventory:
             del self.inventory_dict[item]  # remove the item(s)
         else:
             print("ERROR: CAN'T DELETE ITEM; ITEM NOT IN INVENTORY")
+
+        if item == self.current_item:
+            self.current_item = list(self.inventory_dict.keys())[0]
 
     def remove(self, item, number):
         """
@@ -129,7 +162,7 @@ class Inventory:
             # if the current position matches the number
             if current_pos == number - 1:
                 # and the item in the position exists and is equippable:
-                if key in ("sword", "bow", "potion"):
+                if key in ("sword", "bow", "health potion"):
                     self.current_item = key  # set the current item to the item in the current position
                     break
             else:
@@ -352,7 +385,7 @@ class Player:
         """
         if "arrows" in self.inventory.inventory_dict and self.inventory.inventory_dict["arrows"] > 0:
             self.inventory.remove("arrows", 1)
-            arrow = Arrow(arrow_image, (32, 32), 10, self.hitbox.x, self.hitbox.y)
+            arrow = Arrow(arrow_image, (32, 32), 15, self.hitbox.x, self.hitbox.y)
             arrow.face_direction(self.direction)
 
             arrows_list.append(arrow)
@@ -362,9 +395,9 @@ class Player:
         """
         DOC
         """
-        if "potions" in self.inventory.inventory_dict and self.inventory.inventory_dict["potions"] > 0 \
+        if "health potion" in self.inventory.inventory_dict and self.inventory.inventory_dict["health potion"] > 0 \
                 and self.health < self.total_health:
-            self.inventory.inventory_dict["potions"] -= 1
+            self.inventory.remove("health potion", 1)
             self.health = self.total_health  # refill the player's health back up to the maximum
 
     def damage(self, damage):
@@ -561,33 +594,50 @@ class Enemy:
         """
         DOC
         """
+        if self.move_speed > 0:
 
-        change_x = target_point[0] - self.hitbox.x
-        change_y = target_point[1] - self.hitbox.y
+            change_x = target_point[0] - self.hitbox.x
+            change_y = target_point[1] - self.hitbox.y
 
-        x_steps = abs(int(change_x / self.move_speed))
-        y_steps = abs(int(change_y / self.move_speed))
+            x_steps = abs(int(change_x / self.move_speed))
+            y_steps = abs(int(change_y / self.move_speed))
 
-        self.path = []  # clear the path
+            self.path = []  # clear the path
 
-        for step in range(x_steps):
-            if change_x > 0:  # positive, so move right
-                self.path.append("right")
-            elif change_x < 0:  # negative so move left
-                self.path.append("left")
+            # if the enemy is moving left or right, calculate the y of the path first
+            if self.direction in ("up", "down"):
+                for step in range(y_steps):
+                    if change_y > 0:  # positive so move down
+                        self.path.append("down")
+                    elif change_y < 0:  # negative so move up
+                        self.path.append("up")
 
-        for step in range(y_steps):
-            if change_y > 0:  # positive so move down
-                self.path.append("down")
-            elif change_y < 0:  # negative so move up
-                self.path.append("up")
+                for step in range(x_steps):
+                    if change_x > 0:  # positive, so move right
+                        self.path.append("right")
+                    elif change_x < 0:  # negative so move left
+                        self.path.append("left")
+
+            # if the enemy is moving left or right, calculate the x of the path first
+            elif self.direction in ("left", "right"):
+                for step in range(x_steps):
+                    if change_x > 0:  # positive, so move right
+                        self.path.append("right")
+                    elif change_x < 0:  # negative so move left
+                        self.path.append("left")
+
+                for step in range(y_steps):
+                    if change_y > 0:  # positive so move down
+                        self.path.append("down")
+                    elif change_y < 0:  # negative so move up
+                        self.path.append("up")
 
     def animate(self, stop=None):
         """
         DOC
         """
         # animate normally
-        if stop is None:
+        if stop is None and self.move_speed > 0:
             # if the end of the animation has not yet been reached, advance to the next frame
             if self.current_frame < self.total_frames - 1:
                 self.current_frame += 1
@@ -650,17 +700,17 @@ class Enemy:
         Returns: (none)
         """
 
-        # if the player was moving up and the block is actually above the player, move to to the bottom of the block
+        # if the enemy was moving up and the block is actually above the enemy, move to to the bottom of the block
         if self.direction == "up" and block.y < self.hitbox.y:
             self.hitbox.y = block.bottom
-        # if the player was moving down and the block is actually below the player, move to to the top of the block
+        # if the enemy was moving down and the block is actually below the enemy, move to to the top of the block
         elif self.direction == "down" and block.y > self.hitbox.y:
             self.hitbox.y = block.top - self.hitbox.height
-        # if the player was moving left and the block is actually to the left of the player,
+        # if the enemy was moving left and the block is actually to the left of the enemy,
         # move to to the right of the block
         elif self.direction == "left" and block.x < self.hitbox.x:
             self.hitbox.x = block.right
-        # if the player was moving right and the block is actually to the right of the player,
+        # if the enemy was moving right and the block is actually to the right of the enemy,
         # move to to the left of the block
         elif self.direction == "right" and block.x > self.hitbox.x:
             self.hitbox.x = block.left - self.hitbox.width

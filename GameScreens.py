@@ -46,12 +46,13 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
         if event.type == enemy_animations_timer and not showing_sign:
             # get the next frame of the animation
             for enemy in range(len(enemies_list)):
-                if enemies_list[enemy].attacking and not enemies_list[enemy].enemy_type == "ranged":
-                    enemy_frame = enemies_list[enemy].animate(True)
-                    enemy_frames[enemy] = enemy_frame
-                elif len(enemies_list[enemy].path) > 0:
-                    enemy_frame = enemies_list[enemy].animate()
-                    enemy_frames[enemy] = enemy_frame
+                if not enemies_list[enemy].hitbox.colliderect(player.hitbox):
+                    if enemies_list[enemy].attacking and not enemies_list[enemy].enemy_type == "ranged":
+                        enemy_frame = enemies_list[enemy].animate(True)
+                        enemy_frames[enemy] = enemy_frame
+                    elif len(enemies_list[enemy].path) > 0:
+                        enemy_frame = enemies_list[enemy].animate()
+                        enemy_frames[enemy] = enemy_frame
 
         if event.type == entity_movement_timer and not showing_sign:
             # check if any enemies can 'see' the player; if so, calculate a path to the player
@@ -60,8 +61,10 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
                     enemy.calculate_path(player.hitbox.topleft)
             # move the enemies based on their movement speed and current paths
             for enemy in enemies_list:
-                if not enemy.attacking or enemy.enemy_type == "ranged":
+                if not enemy.attacking or (enemy.enemy_type == "ranged" and not enemy.hitbox.colliderect(player.hitbox)):
                     enemy.follow_path()
+                elif enemy.enemy_type == "ranged" and enemy.hitbox.colliderect(player.hitbox):
+                    enemy.collide(player.hitbox)
 
             for arrow in player_arrows:
                 arrow.move()
@@ -76,9 +79,12 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
             for enemy in enemies_list:
                 if enemy.attacking:
                     if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
-                        player.health -= 1
+                        if player.health > 1:
+                            player.health -= 1
+                        else:
+                            return -2
                     elif enemy.enemy_type == "ranged" and enemy.sight_rect.colliderect(player.hitbox):
-                        arrow = Arrow(arrow_image, (32, 32), 10, enemy.hitbox.x, enemy.hitbox.y)
+                        arrow = Arrow(arrow_image, (32, 32), 12, enemy.hitbox.x, enemy.hitbox.y)
                         arrow.face_target((player.hitbox.x, player.hitbox.y))
                         enemy_arrows.append(arrow)
                     enemy.attacking = False
@@ -194,9 +200,6 @@ def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemie
 
     screen.fill((255, 255, 255))  # (reset the screen with white)
 
-    # draw the HUD
-    hud.draw(screen, (0, 640))
-
     # draw the background layer, then the player and enemies, then the foreground layer
     level.draw_bg(screen)
 
@@ -225,6 +228,13 @@ def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemie
 
     level.draw_fg(screen)
 
+    # draw the HUD
+    if len(enemies_list) == 1 and enemies_list[0].enemy_type == "ranged":
+        hud.update(player, enemies_list[0])
+    else:
+        hud.update(player)
+    hud.draw(screen, (0, 640))
+
     if debug_mode:
         # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
         pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
@@ -247,6 +257,37 @@ def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemie
 
     clock.tick(60)
     pygame.display.flip()
+
+
+def title_screen(screen, clock):
+    """
+    DOC
+    """
+    # stop any music that is playing, and play the title screen music in a loop
+    pygame.mixer.stop()
+    the_holy = pygame.mixer.Sound("Audio/the_holy.ogg")
+    the_holy.play(-1)
+
+    title_font = pygame.font.SysFont("calibri", 100, True)
+    title = title_font.render("Forest Adventure", True, (255, 255, 255))
+
+    message_font = pygame.font.SysFont("calibri", 22, True)
+    message = message_font.render("Press any button to start", True, (255, 255, 255))
+
+    while 1:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return -1
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return 0, 1
+
+        screen.fill((0, 0, 0))
+        pygame.draw.rect(screen, (9, 113, 23), pygame.Rect(0, 0, 1152, 600))
+        pygame.draw.rect(screen, (102, 69, 8), pygame.Rect(0, 600, 1152, 250))
+        screen.blit(title, (225, 250))
+        screen.blit(message, (465, 700))
+        clock.tick(60)
+        pygame.display.flip()
 
 
 def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image):
@@ -361,7 +402,7 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         # check all events, such as timers for animation/movement, keypresses, etc.
         event_data = check_events(player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, arrow_image, arrow_keys, showing_sign)
 
-        if event_data is not -1:
+        if event_data is not -1 and event_data is not -2:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             player_arrows = event_data[1]
@@ -369,8 +410,10 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
             enemy_arrows = event_data[3]
             arrow_keys = event_data[4]
             showing_sign = event_data[5]
-        else:
+        elif event_data is -1:
             return -1  # otherwise the user quit
+        else:
+            return 1, 8  # player died
 
         # if the player enters the forest or the player comes in from a different spawn point (already entered)
         if spawnpoint[1] != 608 or (not entered_forest and player.hitbox.y < spawnpoint[1] - player.hitbox.height):
@@ -431,6 +474,8 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                     player.step_back()
                     showing_sign = True
 
+                    hud.quest_text = ["Find a better weapon!"]
+
                 elif block_type is 4:
                     return 1, 2  # go to screen 2
                 elif block_type is 5:
@@ -446,17 +491,16 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
             if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
                 enemy.attacking = True
             if enemy.hitbox.colliderect(player.hitbox):
-                player.collide(enemy.hitbox)
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
                     arrow.hit = True
                     enemy.damage(1)
 
-        draw(screen, clock, forest_entrance, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True, showing_sign, sign_text, font)
+        draw(screen, clock, forest_entrance, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, False, showing_sign, sign_text, font)
 
 
-def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image):
+def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image, looted_chest):
     """
     Screen 2 -- The Southwestern forest. The player enters from the East (from screen 1) and can return if they choose.
     There are three enemies that spawn throughout the screen, and one chest at the end of the pathway that
@@ -519,6 +563,9 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
 
+    if looted_chest:
+        fg_array[3][4] = 0
+
     # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
     screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
                          pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
@@ -563,15 +610,17 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
         event_data = check_events(player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames,
                                   arrow_image, arrow_keys)
 
-        if event_data is not -1:
+        if event_data is not -1 and event_data is not -2:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             player_arrows = event_data[1]
             enemy_frames = event_data[2]
             enemy_arrows = event_data[3]
             arrow_keys = event_data[4]
-        else:
+        elif event_data is -1:
             return -1  # otherwise the user quit
+        else:
+            return 1, 8  # player died
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -610,12 +659,13 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
                 block_type = southwestern_forest.collision_array[row][column]
 
                 if block_type is 4:
-                    return 2, 1 # go to screen 1
+                    return 2, 1, looted_chest # go to screen 1 (pass back chest status as well)
                 elif block_type is 3:
                     # remove the chest from the fg_array and collision array, and update the collision_list
                     southwestern_forest.fg_array[row][column] = 0
                     southwestern_forest.collision_array[row][column] = 0
                     collision_list = southwestern_forest.get_collision_list()
+                    looted_chest = True
 
                     # add the chest contents to the player's inventory
                     for item in chest_contents.keys():
@@ -632,22 +682,16 @@ def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, ene
             if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
                 enemy.attacking = True
             if enemy.hitbox.colliderect(player.hitbox):
-                player.collide(enemy.hitbox)
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
                     arrow.hit = True
                     enemy.damage(1)
 
-        for arrow in enemy_arrows:
-            if arrow.hitbox.colliderect(player.hitbox):
-                arrow.hit = True
-                player.health -= 1
-
-        draw(screen, clock, southwestern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True)
+        draw(screen, clock, southwestern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, False)
 
 
-def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image):
+def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image, looted_chest):
     """
     Screen 3 -- The Eastern forest. The player enters from the South originally, or the North if they have collected
     the bow and arrows from the Northern screen. There are two enemies that spawn, both melee, on this screen, and one
@@ -712,6 +756,9 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
 
+    if looted_chest:
+        fg_array[15][31] = 0
+
     # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
     screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
                          pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
@@ -760,15 +807,17 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         event_data = check_events(player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames,
                                   arrow_image, arrow_keys)
 
-        if event_data is not -1:
+        if event_data is not -1 and event_data is not -2:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             player_arrows = event_data[1]
             enemy_frames = event_data[2]
             enemy_arrows = event_data[3]
             arrow_keys = event_data[4]
-        else:
+        elif event_data is -1:
             return -1  # otherwise the user quit
+        else:
+            return 1, 8  # player died
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -812,16 +861,17 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                 block_type = eastern_forest.collision_array[row][column]
 
                 if block_type is 4:
-                    return 3, 1  # go to screen 1
+                    return 3, 1, looted_chest  # go to screen 1
                 elif block_type is 5:
-                    return 3, 4  # go to screen 4
+                    return 3, 4, looted_chest  # go to screen 4
                 elif block_type is 6:
-                    return 3, 5  # go to screen 5
+                    return 3, 5, looted_chest  # go to screen 5
                 elif block_type is 3:
                     # remove the chest from the fg_array and collision array, and update the collision_list
                     eastern_forest.fg_array[row][column] = 0
                     eastern_forest.collision_array[row][column] = 0
                     collision_list = eastern_forest.get_collision_list()
+                    looted_chest = True
 
                     # add the chest contents to the player's inventory
                     for item in chest_contents.keys():
@@ -843,7 +893,6 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
             elif enemy.enemy_type == "ranged" and enemy.sight_rect.colliderect(player.hitbox):
                 enemy.attacking = True
             if enemy.hitbox.colliderect(player.hitbox):
-                player.collide(enemy.hitbox)
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
@@ -854,12 +903,15 @@ def eastern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         for arrow in enemy_arrows:
             if arrow.hitbox.colliderect(player.hitbox):
                 arrow.hit = True
-                player.health -= 1
+                if player.health > 1:
+                    player.health -= 1
+                else:
+                    return 0, 8
 
-        draw(screen, clock, eastern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True)
+        draw(screen, clock, eastern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, False)
 
 
-def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image):
+def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image, looted_chest):
     """
     Screen 4 -- The Northern forest. The player enters from the South and can return (to screen 3) if they choose.
     There are three enemies that spawn on this screen, one ranged enemy on the left, one melee enemy that patrols the
@@ -924,6 +976,9 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 7, 0, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
 
+    if looted_chest:
+        fg_array[15][18] = 0
+
     # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
     screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
                          pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
@@ -975,7 +1030,7 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         event_data = check_events(player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames,
                                   arrow_image, arrow_keys, showing_sign)
 
-        if event_data is not -1:
+        if event_data is not -1 and event_data is not -2:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             player_arrows = event_data[1]
@@ -983,8 +1038,10 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
             enemy_arrows = event_data[3]
             arrow_keys = event_data[4]
             showing_sign = event_data[5]
-        else:
+        elif event_data is -1:
             return -1  # otherwise the user quit
+        else:
+            return 1, 8  # player died
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -1036,13 +1093,16 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                     northern_forest.fg_array[row][column] = 0
                     northern_forest.collision_array[row][column] = 0
                     collision_list = northern_forest.get_collision_list()
+                    looted_chest = True
+
+                    hud.quest_text = ["Find the cave!"]
 
                     # add the chest contents to the player's inventory
                     for item in chest_contents.keys():
                         player.inventory.add(item, chest_contents[item])
 
                 elif block_type is 4:
-                    return 4, 3  # go to screen 3
+                    return 4, 3, looted_chest  # go to screen 3
                 else:
                     player.collide(collision_list[block])
 
@@ -1060,7 +1120,6 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
             elif enemy.enemy_type == "ranged" and enemy.sight_rect.colliderect(player.hitbox):
                 enemy.attacking = True
             if enemy.hitbox.colliderect(player.hitbox):
-                player.collide(enemy.hitbox)
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
@@ -1071,12 +1130,15 @@ def northern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies
         for arrow in enemy_arrows:
             if arrow.hitbox.colliderect(player.hitbox):
                 arrow.hit = True
-                player.health -= 1
+                if player.health > 1:
+                    player.health -= 1
+                else:
+                    return 0, 8
 
-        draw(screen, clock, northern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True, showing_sign, sign_text, font)
+        draw(screen, clock, northern_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, False, showing_sign, sign_text, font)
 
 
-def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image):
+def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image, looted_chest):
     """
     Screen 5 -- The Western forest. The player enters from the east (from screen 3) and can return if they choose.
     The player can also exit through the cave in the North to advance to the bossfight. There are three enemies that
@@ -1140,6 +1202,9 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         ]
 
+    if looted_chest:
+        fg_array[4][32] = 0
+
     # rectangles touching the borders of the game screen; used to stop the player from getting out of the map
     screen_boundaries = [pygame.Rect(0, -32, 1152, 32), pygame.Rect(0, 640, 1152, 32),
                          pygame.Rect(-32, 0, 32, 640), pygame.Rect(1152, 0, 32, 640)]
@@ -1188,7 +1253,7 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         event_data = check_events(player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames,
                                   arrow_image, arrow_keys, showing_sign)
 
-        if event_data is not -1:
+        if event_data is not -1 and event_data is not -2:
             # update the animation lists based on the returned data from events, and update the arrow key states
             current_frame = event_data[0]
             player_arrows = event_data[1]
@@ -1196,8 +1261,10 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
             enemy_arrows = event_data[3]
             arrow_keys = event_data[4]
             showing_sign = event_data[5]
-        else:
+        elif event_data is -1:
             return -1  # otherwise the user quit
+        else:
+            return 1, 8  # player died
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -1253,15 +1320,16 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
                     western_forest.fg_array[row][column] = 0
                     western_forest.collision_array[row][column] = 0
                     collision_list = western_forest.get_collision_list()
+                    looted_chest = True
 
                     # add the chest contents to the player's inventory
                     for item in chest_contents.keys():
                         player.inventory.add(item, chest_contents[item])
 
                 elif block_type is 4:
-                    return 5, 3  # go to screen 3
+                    return 5, 3, looted_chest  # go to screen 3
                 elif block_type is 5:
-                    return 5, 6  # go to screen 6
+                    return 5, 6, looted_chest  # go to screen 6
                 else:
                     player.collide(collision_list[block])
 
@@ -1279,7 +1347,6 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
             elif enemy.enemy_type == "ranged" and enemy.sight_rect.colliderect(player.hitbox):
                 enemy.attacking = True
             if enemy.hitbox.colliderect(player.hitbox):
-                player.collide(enemy.hitbox)
                 enemy.collide(player.hitbox)
             for arrow in player_arrows:
                 if arrow.hitbox.colliderect(enemy.hitbox):
@@ -1289,12 +1356,15 @@ def western_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_
         for arrow in enemy_arrows:
             if arrow.hitbox.colliderect(player.hitbox):
                 arrow.hit = True
-                player.health -= 1
+                if player.health > 1:
+                    player.health -= 1
+                else:
+                    return 0, 8
 
-        draw(screen, clock, western_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, True, showing_sign, sign_text, font)
+        draw(screen, clock, western_forest, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, False, showing_sign, sign_text, font)
 
 
-def cave(screen, clock, spritesheet, player, hud, spawnpoint):
+def cave(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image):
     """
     Screen 6 -- The cave. The player enters from the south and cannot exit back through. There is only one enemy
     in the cave -- the boss -- which is 4 times the size of the player. He is both ranged and melee, which is determined
@@ -1377,13 +1447,16 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint):
     entered_screen = False
 
     current_frame = player.animate(True)  # get a still frame of the player standing in the current direction
+    enemy_frames = []  # initialize a list to hold all the enemy animation frames
 
-    # pygame timer event ID's used for activating events like animation and movement
-    walking_animation_timer = pygame.USEREVENT + 1  # timer for walking frame animation
-    walking_movement_timer = pygame.USEREVENT + 2  # timer for walking movement
-    check_keypresses_timer = pygame.USEREVENT + 3  # timer for checking user keyboard input
+    player_arrows = []
+    enemy_arrows = []
 
-    pygame.time.set_timer(check_keypresses_timer, 5)  # set the keypress check timer to run every 5 milliseconds
+    # for every enemy in the level, get the first frame and add it to the frames list
+    for enemy in enemies_list:
+        enemy.attacking = "stopped"
+        enemy_frame = enemy.animate(True)
+        enemy_frames.append(enemy_frame)
 
     # create a dictionary that will be used to tell which keys are currently being pressed.
     # this is used because I want the player to orient himself and set movement/animation timers only once, but
@@ -1394,100 +1467,29 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint):
     # MAIN GAME SCREEN LOOP
     while True:
 
-        # parse pygame events
-        for event in pygame.event.get():
+        if len(enemies_list) == 0:
+            cave.fg_array[4][17] = 0
+            cave.fg_array[4][18] = 0
+            cave.collision_array[4][17] = 0
+            cave.collision_array[4][18] = 0
+            collision_list = cave.get_collision_list()
+            pygame.mixer.stop()
 
-            # user clicked exit
-            if event.type == pygame.QUIT:
-                return -1
+        # check all events, such as timers for animation/movement, keypresses, etc.
+        event_data = check_events(player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames,
+                                  arrow_image, arrow_keys)
 
-            # advance walking animation
-            if event.type == walking_animation_timer:
-                # get the next frame of the animation
-                current_frame = player.animate()
-
-            # advance actual positional movement
-            if event.type == walking_movement_timer:
-                # move the player based on their movement speed
-                player.move()
-
-            # check keypresses
-            if event.type == check_keypresses_timer:
-
-                keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
-
-                # up is pressed
-                if keys_pressed[pygame.K_UP]:
-                    player.direction = "up"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["up"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["up"] = True                              # set the up arrow state to True (pressed)
-
-                # down is pressed
-                elif keys_pressed[pygame.K_DOWN]:
-                    player.direction = "down"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["down"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["down"] = True                            # set the down arrow state to True
-
-                # right is pressed
-                elif keys_pressed[pygame.K_RIGHT]:
-                    player.direction = "right"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["right"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["right"] = True                           # set the right arrow state to True
-
-                # left is pressed
-                elif keys_pressed[pygame.K_LEFT]:
-                    player.direction = "left"  # update the player direction
-
-                    # only run on the actual keypress:
-                    if not arrow_keys["left"]:
-                        current_frame = player.animate()                     # orient the player with a new frame
-                        pygame.time.set_timer(walking_movement_timer, 50)    # set the movement timer for every 50 ms
-                        pygame.time.set_timer(walking_animation_timer, 200)  # set the animation timer for every 200 ms
-                        arrow_keys["left"] = True                            # set the right arrow state to True
-
-                # up is NOT being pressed
-                if not keys_pressed[pygame.K_UP]:
-                    arrow_keys["up"] = False
-
-                # down is NOT being pressed
-                if not keys_pressed[pygame.K_DOWN]:
-                    arrow_keys["down"] = False
-
-                # right is NOT being pressed
-                if not keys_pressed[pygame.K_RIGHT]:
-                    arrow_keys["right"] = False
-
-                # left is NOT being pressed
-                if not keys_pressed[pygame.K_LEFT]:
-                    arrow_keys["left"] = False
-
-                # NO arrow keys are being pressed (all False)
-                if not arrow_keys["up"] and not arrow_keys["down"] \
-                   and not arrow_keys["right"] and not arrow_keys["left"]:
-
-                    pygame.time.set_timer(walking_movement_timer, 0)   # shut down the movement timer
-                    pygame.time.set_timer(walking_animation_timer, 0)  # shut down the animation timer
-                    current_frame = player.animate(True)               # set the current frame to the standing frame
-
-            # keys that should only register once when pressed
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LCTRL:
-                    player.dodge()
+        if event_data is not -1 and event_data is not -2:
+            # update the animation lists based on the returned data from events, and update the arrow key states
+            current_frame = event_data[0]
+            player_arrows = event_data[1]
+            enemy_frames = event_data[2]
+            enemy_arrows = event_data[3]
+            arrow_keys = event_data[4]
+        elif event_data is -1:
+            return -1  # otherwise the user quit
+        else:
+            return 1, 8  # player died
 
         # if the player fully enters the screen from a different screen, add the exit paths to the collision array
         if not entered_screen and (player.hitbox.x > spawnpoint[0] + player.hitbox.width or
@@ -1510,9 +1512,25 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint):
             rude_buster = pygame.mixer.Sound("Audio/rude_buster.ogg")
             rude_buster.play(-1)
 
+            # let the boss move
+            enemies_list[0].move_speed = 5
+            enemies_list[0].attacking = True
+
         for boundary in screen_boundaries:
             if player.hitbox.colliderect(boundary):
                 player.collide(boundary)
+            for enemy in enemies_list:
+                if enemy.hitbox.colliderect(boundary):
+                    enemy.hitbox.x = enemy.spawnpoint[0]
+                    enemy.hitbox.y = enemy.spawnpoint[1]
+                    enemy.align_sight()
+            for arrow in player_arrows:
+                if arrow.hitbox.colliderect(boundary):
+                    arrow.hit = True
+
+            for arrow in enemy_arrows:
+                if arrow.hitbox.colliderect(boundary):
+                    arrow.hit = True
 
         for block in range(len(collision_list) - 1):
             if collision_list[block] is not None and player.hitbox.colliderect(collision_list[block]):
@@ -1522,24 +1540,38 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint):
 
                 block_type = cave.collision_array[row][column]
 
-                player.collide(collision_list[block])
+                if block_type is 3:
+                    return 6, 7  # display player wins screen
+                else:
+                    player.collide(collision_list[block])
 
-        screen.fill((255, 255, 255))  # (reset the screen with white)
+            for arrow in player_arrows:
+                if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
+                    arrow.hit = True
 
-        hud.draw(screen, (0, 640))
+            for arrow in enemy_arrows:
+                if collision_list[block] is not None and arrow.hitbox.colliderect(collision_list[block]):
+                    arrow.hit = True
 
-        # draw the background layer, then the player, then the foreground layer
-        cave.draw_bg(screen)
-        screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
-        cave.draw_fg(screen)
+        for enemy in enemies_list:
+            if enemy.enemy_type == "ranged" and enemy.sight_rect.colliderect(player.hitbox) and not enemy.attacking == "stopped":
+                enemy.attacking = True
+            if enemy.hitbox.colliderect(player.hitbox):
+                enemy.collide(player.hitbox)
+            for arrow in player_arrows:
+                if arrow.hitbox.colliderect(enemy.hitbox):
+                    arrow.hit = True
+                    enemy.damage(1)
 
-        # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
-        pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
-        pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
+        for arrow in enemy_arrows:
+            if arrow.hitbox.colliderect(player.hitbox):
+                arrow.hit = True
+                if player.health > 1:
+                    player.health -= 1
+                else:
+                    return 0, 8
 
-        clock.tick(60)  # limit screen updates to 60 fps
-
-        pygame.display.flip()  # update the screen with what has just been drawn
+        draw(screen, clock, cave, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, False)
 
 
 def screen_handler():
@@ -1598,48 +1630,68 @@ def screen_handler():
     # create a two dimensional list containing a list element for each screen, which contains the enemies
     # that will spawn on the screen.
     enemies_list = [
-        [  # SCREEN 1
-            Enemy("melee", 5, (32, 32), 250, 100, "right", 3, enemy_animations[0:4], (384, 128), (800, 128), 50)
+        [   # SCREEN 1
+            Enemy("melee", 5, (32, 32), 250, 100, "right", 2, enemy_animations[0:4], (384, 128), (800, 128), 50)
         ],
-        [  # SCREEN 2
-            Enemy("melee", 4, (32, 32), 250, 175, "down", 3, enemy_animations[0:4], (688, 160), (688, 512), 50),
-            Enemy("melee", 4, (32, 32), 250, 175, "up", 3, enemy_animations[0:4], (400, 512), (400, 160), 50),
-            Enemy("melee", 4, (32, 32), 250, 175, "down", 3, enemy_animations[0:4], (128, 160), (128, 512), 50)
+        [   # SCREEN 2
+            Enemy("melee", 4, (32, 32), 250, 175, "down", 1, enemy_animations[0:4], (688, 160), (688, 512), 50),
+            Enemy("melee", 4, (32, 32), 250, 175, "up", 1, enemy_animations[0:4], (400, 512), (400, 160), 50),
+            Enemy("melee", 4, (32, 32), 250, 175, "down", 2, enemy_animations[0:4], (128, 160), (128, 512), 50)
         ],
-        [  # SCREEN 3
-            Enemy("melee", 4, (32, 32), 250, 100, "left", 3, enemy_animations[0:4], (960, 128), (384, 128), 55),
-            Enemy("ranged", 3, (32, 32), 450, 450, "up", 3, enemy_animations[4:], (224, 512))
+        [   # SCREEN 3
+            Enemy("melee", 4, (32, 32), 250, 100, "left", 2, enemy_animations[0:4], (960, 128), (384, 128), 55),
+            Enemy("ranged", 3, (32, 32), 450, 450, "up", 4, enemy_animations[4:], (224, 512))
         ],
-        [  # SCREEN 4
+        [   # SCREEN 4
             Enemy("melee", 5, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (992, 480), (992, 128), 55),
             Enemy("ranged", 4, (32, 32), 350, 350, "up", 3, enemy_animations[4:], (176, 416))
         ],
-        [  # SCREEN 5
+        [   # SCREEN 5
             Enemy("melee", 6, (32, 32), 250, 200, "right", 3, enemy_animations[0:4], (96, 512), (544, 512), 64),
             Enemy("ranged", 4, (32, 32), 400, 400, "down", 3, enemy_animations[4:], (544, 96)),
             Enemy("ranged", 4, (32, 32), 400, 400, "down", 3, enemy_animations[4:], (672, 96))
+        ],
+        [
+            # SCREEN 6
+            Enemy("ranged", 0, (32, 32), 3000, 3000, "down", 8, enemy_animations[4:], (560, 416))
         ]
     ]
 
     arrow_image = get_frames(spritesheet, (224, 96, 32, 32), 32)
 
-    # create a hud using the hud_elements spritesheet and stats from the player
-    hud = HUD(hud_elements, pygame.Rect(0, 0, 1152, 210), player.inventory.inventory_dict,
-              player.inventory.current_item, "SAMPLE TEXT", player.health)
+    # get all necessary images from the spritesheet
+    base_image = get_image(hud_elements, pygame.Rect(0, 0, 1152, 210))
+    items_elements = get_frames(hud_elements, pygame.Rect(0, 210, 900, 150), 150)
+    hearts = get_frames(hud_elements, pygame.Rect(900, 210, 64, 32), 32)
 
-    # stop any music that is playing, and play the forest music in a loop
-    pygame.mixer.stop()
-    scarlet_forest = pygame.mixer.Sound("Audio/scarlet_forest.ogg")
-    scarlet_forest.play(-1)
+    # add them all to one list
+    hud_list = [base_image]
+    for item in items_elements:
+        hud_list.append(item)
+    for heart in hearts:
+        hud_list.append(heart)
 
-    returned_info = (3, 4)
+    # create a hud using the items_list of images and stats from the player
+    hud = HUD(hud_list, pygame.Rect(0, 0, 1152, 210), player.inventory.inventory_dict,
+              player.inventory.current_item, ["Using the arrow keys to move,", "go bump into that sign over there!"], player.health)
+
+    returned_info = (0, 0)
     prev_screen = returned_info[0]
     next_screen = returned_info[1]
 
+    looted_chests = [False for screen in range(4)]
+
     while True:
 
-        if next_screen is 1:
+        if next_screen is 0:
+            returned_info = title_screen(screen, clock)
+
+        elif next_screen is 1:
             if prev_screen is 0:
+                # stop any music that is playing, and play the forest music in a loop
+                pygame.mixer.stop()
+                scarlet_forest = pygame.mixer.Sound("Audio/scarlet_forest.ogg")
+                scarlet_forest.play(-1)
                 returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (704, 608), enemies_list[0], arrow_image)
             elif prev_screen is 2:
                 returned_info = forest_entrance(screen, clock, spritesheet, player, hud, (0, 256), enemies_list[0], arrow_image)
@@ -1648,35 +1700,71 @@ def screen_handler():
 
         elif next_screen is 2:
             if prev_screen is 1:
-                returned_info = southwestern_forest(screen, clock, spritesheet, player, hud, (1120, 256), enemies_list[1], arrow_image)
+                returned_info = southwestern_forest(screen, clock, spritesheet, player, hud, (1120, 256), enemies_list[1], arrow_image, looted_chests[0])
 
         elif next_screen is 3:
             if prev_screen is 1:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (704, 608), enemies_list[2], arrow_image)
+                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (704, 608), enemies_list[2], arrow_image, looted_chests[1])
             elif prev_screen is 4:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (416, 0), enemies_list[2], arrow_image)
+                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (416, 0), enemies_list[2], arrow_image, looted_chests[1])
             elif prev_screen is 5:
-                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (0, 512), enemies_list[2], arrow_image)
+                returned_info = eastern_forest(screen, clock, spritesheet, player, hud, (0, 512), enemies_list[2], arrow_image, looted_chests[1])
 
         elif next_screen is 4:
             if prev_screen is 3:
-                returned_info = northern_forest(screen, clock, spritesheet, player, hud, (416, 608), enemies_list[3], arrow_image)
+                returned_info = northern_forest(screen, clock, spritesheet, player, hud, (416, 608), enemies_list[3], arrow_image, looted_chests[2])
 
         elif next_screen is 5:
             if prev_screen is 3:
-                returned_info = western_forest(screen, clock, spritesheet, player, hud, (1120, 512), enemies_list[4], arrow_image)
+                returned_info = western_forest(screen, clock, spritesheet, player, hud, (1120, 512), enemies_list[4], arrow_image, looted_chests[3])
 
         elif next_screen is 6:
             if prev_screen is 5:
-                returned_info = cave(screen, clock, spritesheet, player, hud, (562, 608))
+                returned_info = cave(screen, clock, spritesheet, player, hud, (562, 608), enemies_list[5], arrow_image)
+
+        elif next_screen is 7:
+            if prev_screen is 6:
+
+                screen.fill((0, 0, 0))
+
+                victory_fanfare = pygame.mixer.Sound("Audio/fanfare.ogg")
+
+                font = pygame.font.SysFont("calibri", 50, True)
+                text = font.render("CONGRATULATIONS! YOU WIN!", True, (50, 255, 0))
+                screen.blit(text, (250, 375))
+
+                pygame.display.flip()
+
+                victory_fanfare.play()
+                pygame.time.delay(12000)
+
+                returned_info = (7, 0)
+
+        elif next_screen is 8:
+
+            screen.fill((0, 0, 0))
+
+            pygame.mixer.stop()
+
+            font = pygame.font.SysFont("calibri", 50, True)
+            text = font.render("YOU DIED...", True, (200, 0, 0))
+            screen.blit(text, (475, 400))
+
+            pygame.display.flip()
+
+            pygame.time.delay(4000)
+
+            player.health = player.total_health
+
+            returned_info = (0, 1)
 
         if returned_info is -1:
             break
 
         prev_screen = returned_info[0]
         next_screen = returned_info[1]
-
-        print(player.inventory.inventory_dict)
+        if not prev_screen in (0, 1, 6, 7, 8):
+            looted_chests[prev_screen - 2] = returned_info[2]
 
     pygame.quit()
     print("Thanks for playing!")
