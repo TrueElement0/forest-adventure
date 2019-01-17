@@ -356,7 +356,7 @@ class Player:
             arrow.face_direction(self.direction)
 
             arrows_list.append(arrow)
-            return arrows_list
+        return arrows_list
 
     def drink_potion(self):
         """

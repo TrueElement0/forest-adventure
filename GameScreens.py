@@ -206,6 +206,7 @@ def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemie
             screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
         else:
             del enemies_list[enemy]
+            del enemy_frames[enemy]
             break  # exit the loop to avoid index errors, now that an enemy has been removed. If more than one enemy
             # was somehow killed at once, the other one will be removed one tick later (1/60 seconds)
 
@@ -221,7 +222,6 @@ def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemie
         else:
             enemy_arrows.remove(arrow)
             break
-    print(len(player_arrows), len(enemy_arrows))
 
     level.draw_fg(screen)
 
