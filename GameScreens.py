@@ -23,7 +23,7 @@ pygame.time.set_timer(reset_player_abilities, 1000)  # set a timer to reset the 
 
 
 def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, arrow_image, arrow_keys, showing_sign=False):
-    """DOC"""
+    """Checks all the timer and keypress events for both players and enemies"""
 
     # parse pygame events
     for event in pygame.event.get():
@@ -33,12 +33,12 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
             return -1
 
         # advance player walking animation
-        if event.type == walking_animation_timer and not showing_sign:
+        if event.type == walking_animation_timer and not showing_sign and not player.respawning:
             # get the next frame of the animation
             current_frame = player.animate()
 
         # advance actual positional movement
-        if event.type == walking_movement_timer and not showing_sign:
+        if event.type == walking_movement_timer and not showing_sign and not player.respawning:
             # move the player based on their movement speed
             player.move()
 
@@ -66,31 +66,40 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
                 elif enemy.enemy_type == "ranged" and enemy.hitbox.colliderect(player.hitbox):
                     enemy.collide(player.hitbox)
 
+            # move all the arrows currently on th escreen
             for arrow in player_arrows:
                 arrow.move()
             for arrow in enemy_arrows:
                 arrow.move()
 
+        # reset the players abilities for dodging and using items
         if event.type == reset_player_abilities and not showing_sign:
             player.can_dodge = True
             player.can_use_item = True
 
+        # check for enemy attacks
         if event.type == enemy_attack_timer:
             for enemy in enemies_list:
                 if enemy.attacking:
+                    # if the player is within melee attack range
                     if enemy.enemy_type == "melee" and enemy.sword_swing.colliderect(player.hitbox):
+                        # player will not die, so remove a health point
                         if player.health > 1:
                             player.health -= 1
+                        # otherwise the plyer will die
                         else:
                             return -2
+                    # if the player is within a ranged enemy's line of sight
                     elif enemy.enemy_type == "ranged" and enemy.sight_rect.colliderect(player.hitbox):
+                        # create an arrow, target the player, and add it to the list of enemy arrows
                         arrow = Arrow(arrow_image, (32, 32), 12, enemy.hitbox.x, enemy.hitbox.y)
                         arrow.face_target((player.hitbox.x, player.hitbox.y))
                         enemy_arrows.append(arrow)
+                    # the enemy has now attacked, so they have to wait for the enemy attack reset to attack again
                     enemy.attacking = False
 
         # check keypresses
-        if event.type == check_keypresses_timer and not showing_sign:
+        if event.type == check_keypresses_timer and not showing_sign and not player.respawning:
 
             keys_pressed = pygame.key.get_pressed()  # get the currently pressed keypresses
 
@@ -162,11 +171,12 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
                 current_frame = player.animate(True)  # set the current frame to the standing frame
 
         # keys that should only register once when pressed
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN and not player.respawning:
             if event.key == pygame.K_LCTRL and player.can_dodge and not showing_sign:
                 player.dodge()
                 player.can_dodge = False
 
+            # the player pressed alt and the game is not paused from a sign
             elif event.key == pygame.K_LALT and player.can_use_item and not showing_sign:
                 if player.inventory.current_item == "sword":
                     player.sword_attack(enemies_list)
@@ -174,11 +184,14 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
                     player_arrows = player.bow_attack(arrow_image, player_arrows)
                 elif player.inventory.current_item == "health potion":
                     player.drink_potion()
+                # the player has now used an item, so they have to wait for their abilities to reset
                 player.can_use_item = False
 
+            # if the player presses escape, set the sign to exit
             elif event.key == pygame.K_ESCAPE:
                 showing_sign = False
 
+            # if the player presses keys 1-5, set their equipped item accordingly
             elif event.key == pygame.K_1:
                 player.inventory.set_item(1)
             elif event.key == pygame.K_2:
@@ -190,53 +203,58 @@ def check_events(player, player_arrows, current_frame, enemies_list, enemy_arrow
             elif event.key == pygame.K_5:
                 player.inventory.set_item(5)
 
-    return current_frame, player_arrows, enemy_frames, enemy_arrows, arrow_keys, showing_sign
+    return current_frame, player_arrows, enemy_frames, enemy_arrows, arrow_keys, showing_sign  # return updated data
 
 
 def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, debug_mode, showing_sign=False, sign_text=None, font=None):
-    """
-    DOC
-    """
+    """Draws everything on each screen including the tileset, player, enemies, and arrows, as well as the HUD"""
 
     screen.fill((255, 255, 255))  # (reset the screen with white)
 
     # draw the background layer, then the player and enemies, then the foreground layer
-    level.draw_bg(screen)
-
-    screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))
+    level.draw_bg(screen)  # BG
+    screen.blit(current_frame, (player.hitbox.x, player.hitbox.y))  # PLAYER
+    # ENEMIES
     for enemy in range(len(enemies_list)):
+        # check to see if the enemy is dead (if so, do not draw it, and remove it from the lists)
         if not enemies_list[enemy].dead:
             screen.blit(enemy_frames[enemy], (enemies_list[enemy].hitbox.x, enemies_list[enemy].hitbox.y))
         else:
             del enemies_list[enemy]
             del enemy_frames[enemy]
             break  # exit the loop to avoid index errors, now that an enemy has been removed. If more than one enemy
-            # was somehow killed at once, the other one will be removed one tick later (1/60 seconds)
+                   # was somehow killed at once, the other one will be removed one tick later (1/60 seconds)
 
+    # ARROWS
     for arrow in player_arrows:
+        # check to see if the arrow has hit anything (if so, do not draw it, and remove it from the list)
         if not arrow.hit:
             arrow.draw(screen)
         else:
             player_arrows.remove(arrow)
             break
     for arrow in enemy_arrows:
+        # check to see if the arrow has hit anything (if so, do not draw it, and remove it from the list)
         if not arrow.hit:
             arrow.draw(screen)
         else:
             enemy_arrows.remove(arrow)
             break
 
-    level.draw_fg(screen)
+    level.draw_fg(screen)  # FG
 
-    # draw the HUD
-    if len(enemies_list) == 1 and enemies_list[0].enemy_type == "ranged":
-        hud.update(player, enemies_list[0])
+    # HUD
+    # since the boss is currently only a ranged enemy, check to see if it's line of sight is over 1000px wide.
+    # (this reveals that it is the boss, because no other enemy can see that far)
+    if enemies_list[0].sight_width > 1000:
+        hud.update(player, enemies_list[0])  # update the hud (pass the boss object as well, to show health)
+    # otherwise the enemy is normal
     else:
-        hud.update(player)
-    hud.draw(screen, (0, 640))
+        hud.update(player)  # update the hud, just passing the player object
+    hud.draw(screen, (0, 640))  # DRAW THE HUD
 
     if debug_mode:
-        # (FOR DEBUGGING PURPOSES) draw the player hitbox, and the player sword swing
+        # (FOR DEBUGGING PURPOSES) draw all hitboxes, lines of sight, sword swings, etc.
         pygame.draw.rect(screen, (255, 0, 0), player.hitbox, 2)
         pygame.draw.rect(screen, (0, 255, 0), player.sword_swing, 2)
         for enemy in enemies_list:
@@ -249,42 +267,57 @@ def draw(screen, clock, level, hud, player, player_arrows, current_frame, enemie
         for arrow in enemy_arrows:
             pygame.draw.rect(screen, (255, 0, 0), arrow.hitbox, 2)
 
+    # SIGN
     if showing_sign:
+        # draw a yellow-ish rectangle for the base of the sign
         pygame.draw.rect(screen, (100, 100, 25), (100, 50, 950, 500))
+        # draw all the text to display on the sign
         for line in sign_text:
             current_text = font.render(line, True, (0, 0, 0))
             screen.blit(current_text, (120, 100 + (50 * sign_text.index(line))))
 
-    clock.tick(60)
-    pygame.display.flip()
+    clock.tick(60)         # limit the refresh rate to 60 fps
+    pygame.display.flip()  # flip what has been drawn to the screen
 
 
 def title_screen(screen, clock):
     """
-    DOC
+    Shows a (very basic) splash screen including the game title and my name.
+    The player can press any key (literally any key...tested with scroll wheel!?) to begin playing the game.
+    If the player beats the game, they will be returned to this title screen.
     """
     # stop any music that is playing, and play the title screen music in a loop
     pygame.mixer.stop()
     the_holy = pygame.mixer.Sound("Audio/the_holy.ogg")
     the_holy.play(-1)
 
+    # set up the font and text that will be displayed
     title_font = pygame.font.SysFont("calibri", 100, True)
     title = title_font.render("Forest Adventure", True, (255, 255, 255))
+
+    name_font = pygame.font.SysFont("calibri", 35, True)
+    name = name_font.render("By Mason Kury", True, (255, 255, 255))
 
     message_font = pygame.font.SysFont("calibri", 22, True)
     message = message_font.render("Press any button to start", True, (255, 255, 255))
 
+    # MAIN DRAWING LOOP
     while 1:
+        # parse pygame events
         for event in pygame.event.get():
+            # player clicked exit, so quit the game
             if event.type == pygame.QUIT:
                 return -1
+            # player clicked a button, so begin the game on the first screen
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 return 0, 1
 
-        screen.fill((0, 0, 0))
+        # DRAW STUFF
+        screen.fill((0, 0, 0))                                                  # refresh the screen with white
         pygame.draw.rect(screen, (9, 113, 23), pygame.Rect(0, 0, 1152, 600))
         pygame.draw.rect(screen, (102, 69, 8), pygame.Rect(0, 600, 1152, 250))
         screen.blit(title, (225, 250))
+        screen.blit(name, (475, 350))
         screen.blit(message, (465, 700))
         clock.tick(60)
         pygame.display.flip()
@@ -498,6 +531,10 @@ def forest_entrance(screen, clock, spritesheet, player, hud, spawnpoint, enemies
                     enemy.damage(1)
 
         draw(screen, clock, forest_entrance, hud, player, player_arrows, current_frame, enemies_list, enemy_arrows, enemy_frames, False, showing_sign, sign_text, font)
+
+        # if the player has died and respawned, let them move now that a loop has been completed
+        if player.respawning:
+            player.respawning = False
 
 
 def southwestern_forest(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arrow_image, looted_chest):
@@ -1513,7 +1550,7 @@ def cave(screen, clock, spritesheet, player, hud, spawnpoint, enemies_list, arro
             rude_buster.play(-1)
 
             # let the boss move
-            enemies_list[0].move_speed = 5
+            enemies_list[0].move_speed = 4
             enemies_list[0].attacking = True
 
         for boundary in screen_boundaries:
@@ -1755,6 +1792,7 @@ def screen_handler():
             pygame.time.delay(4000)
 
             player.health = player.total_health
+            player.respawning = True
 
             returned_info = (0, 1)
 

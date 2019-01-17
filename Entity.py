@@ -305,6 +305,7 @@ class Player:
         self.health = health
         self.total_health = health
         self.dead = False
+        self.respawning = False
 
         self.current_frame = 0
         self.animations = animations
