@@ -1921,6 +1921,47 @@ def screen_handler():
                 victory_fanfare.play()
                 pygame.time.delay(12000)  # wait for 12 seconds to let the song finish, and have a few seconds to spare
 
+                # reset the player
+                player = Player(7, 20, pygame.Rect(16, 16, 32, 32), pygame.Rect(0, 0, 64, 64), "up", 5, player_animations)
+
+                # reset all  the enemies
+                enemies_list = [
+                    [  # SCREEN 1
+                        Enemy("melee", 5, (32, 32), 250, 100, "right", 2, enemy_animations[0:4], (384, 128), (800, 128),
+                              50)
+                    ],
+                    [  # SCREEN 2
+                        Enemy("melee", 4, (32, 32), 250, 175, "down", 1, enemy_animations[0:4], (688, 160), (688, 512),
+                              50),
+                        Enemy("melee", 4, (32, 32), 250, 175, "up", 1, enemy_animations[0:4], (400, 512), (400, 160),
+                              50),
+                        Enemy("melee", 4, (32, 32), 250, 175, "down", 2, enemy_animations[0:4], (128, 160), (128, 512),
+                              50)
+                    ],
+                    [  # SCREEN 3
+                        Enemy("melee", 4, (32, 32), 250, 100, "left", 2, enemy_animations[0:4], (960, 128), (384, 128),
+                              55),
+                        Enemy("ranged", 3, (32, 32), 450, 450, "up", 4, enemy_animations[4:], (224, 512))
+                    ],
+                    [  # SCREEN 4
+                        Enemy("melee", 5, (32, 32), 250, 100, "up", 3, enemy_animations[0:4], (992, 480), (992, 128),
+                              55),
+                        Enemy("ranged", 4, (32, 32), 350, 350, "up", 3, enemy_animations[4:], (176, 416))
+                    ],
+                    [  # SCREEN 5
+                        Enemy("melee", 6, (32, 32), 250, 200, "right", 3, enemy_animations[0:4], (96, 512), (544, 512),
+                              64),
+                        Enemy("ranged", 4, (32, 32), 400, 400, "down", 3, enemy_animations[4:], (544, 96)),
+                        Enemy("ranged", 4, (32, 32), 400, 400, "down", 3, enemy_animations[4:], (672, 96))
+                    ],
+                    [
+                        # SCREEN 6
+                        Enemy("ranged", 0, (32, 32), 3000, 3000, "down", 8, enemy_animations[4:], (560, 416))
+                    ]
+                ]
+                # reset the chests
+                looted_chests = [False for screen in range(4)]
+
                 returned_info = (7, 0)  # load the title screen
 
         # player died
