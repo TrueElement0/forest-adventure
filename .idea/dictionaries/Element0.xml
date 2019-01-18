@@ -3,12 +3,19 @@
     <words>
       <w>blit</w>
       <w>collideable</w>
+      <w>equippable</w>
       <w>hitbox</w>
+      <w>hitboxes</w>
       <w>keypresses</w>
       <w>kury</w>
       <w>pygame</w>
       <w>rects</w>
+      <w>respawn</w>
+      <w>respawned</w>
+      <w>respawning</w>
+      <w>respawns</w>
       <w>spawnpoint</w>
+      <w>spawnpoints</w>
       <w>spritesheet</w>
       <w>teleport</w>
       <w>tileset</w>

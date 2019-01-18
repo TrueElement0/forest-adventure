@@ -41,12 +41,18 @@ def get_frames(spritesheet, strip_rect, frame_width):
 
 def get_image(spritesheet, frame_rect):
     """
-    DOC
-    """
-    frame = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
-    frame.blit(spritesheet, (0, 0), frame_rect)
+    Acts as a get_frames() function but for only one, singular, image.
 
-    return frame
+    Parameters:
+        spritesheet: must be of type pygame.Surface; the spritesheet to get images from
+        frame_rect: must be of type pygame.Rect; the frame size and location of the image
+
+    Returns: pygame.Surface; the image
+    """
+    image = pygame.Surface(frame_rect.size, pygame.SRCALPHA)
+    image.blit(spritesheet, (0, 0), frame_rect)
+
+    return image
 
 
 class Inventory:
@@ -56,9 +62,7 @@ class Inventory:
     Created Attributes:
         sword: the number of swords the player has.
         gold: the amount of gold the player has.
-
         current_item: the current item the player has equipped.
-
         inventory_dict: a dictionary allowing easy access to the player's inventory.
     """
 
@@ -71,9 +75,8 @@ class Inventory:
         self.inventory_dict = {"sword": self.sword, "gold": self.gold}
 
     def sort(self):
-        """
-        DOC
-        """
+        """Sorts the player's inventory based on the order of 'sword', 'bow', 'health potion', 'arrows', 'gold'"""
+        # will hold the new inventory
         sorted_inventory = {}
 
         if "sword" in self.inventory_dict:
@@ -87,7 +90,7 @@ class Inventory:
         if "gold" in self.inventory_dict:
             sorted_inventory["gold"] = self.inventory_dict["gold"]
 
-        self.inventory_dict = sorted_inventory
+        self.inventory_dict = sorted_inventory  # set the new sorted inventory as the current one
 
     def add(self, item, number):
         """
@@ -104,7 +107,7 @@ class Inventory:
         else:
             self.inventory_dict[item] = number  # otherwise create the item in the dict and add it
 
-        self.sort()
+        self.sort()  # sort the inventory whenever a new item is added to the end of the inventory
 
     def delete(self, item):
         """
@@ -171,7 +174,7 @@ class Inventory:
 
 class Arrow:
     """
-    DOC
+    Creates an arrow that can be shot from ranged enemies or the player
     """
     def __init__(self, image, hitbox, move_speed, x, y):
         """DOC"""
@@ -187,15 +190,16 @@ class Arrow:
         self.hit = False
 
     def move(self):
-        """
-        DOC
-        """
+        """moves the arrow with the appropriate velocities"""
         self.hitbox.x += self.velocity_x
         self.hitbox.y += self.velocity_y
 
     def face_target(self, target):
         """
-        DOC
+        Calculates an angle and x/y velocities used to point an arrow toward a target point.
+
+        Parameters:
+            target: must be tuple of len(2); the target point to aim at.
         """
         change_x = target[0] - self.hitbox.x
         change_y = -1 * (target[1] - self.hitbox.y)  # y must be inverted for trig calculations because positive y
@@ -228,13 +232,18 @@ class Arrow:
 
         self.image = pygame.transform.rotate(self.original_image, angle)
 
+        # basically create a scaled down triangle with the same angles as the angular triangle, but this time
+        # it is for x and y velocities.
         self.velocity_x = (self.move_speed/diagonal) * change_x
         self.velocity_y = (self.move_speed/diagonal) * change_y * -1  # y velocity must be inverted because positive y
                                                                       # is down on a computer monitor
 
     def face_direction(self, direction):
         """
-        DOC
+        Points the arrow toward a given direction.
+
+        Parameters:
+            direction: must be string in ("up", "down", "left", "right"); the direction the arrow is to face.
         """
         if direction == "up":
             self.image = pygame.transform.rotate(self.original_image, 90)
@@ -374,7 +383,10 @@ class Player:
 
     def sword_attack(self, enemies_list):
         """
-        DOC
+        Attacks any enemy within the sword swing area.
+
+        Parameters:
+            enemies_list: must be list with elements from Enemy class; the enemies on the current screen.
         """
         for enemy in enemies_list:
             if self.sword_swing.colliderect(enemy.hitbox):
@@ -382,39 +394,36 @@ class Player:
 
     def bow_attack(self,arrow_image, arrows_list):
         """
-        DOC
+        Fires an arrow in the player's current direction.
+
+        Parameters:
+            arrow_image: must be of type pygame.Surface; the image to blit when drawing the arrow.
+            arrows_list: must be list with elements from Arrow class; the player's arrows currently on the screen.
         """
+        # if the player has arrows in their inventory
         if "arrows" in self.inventory.inventory_dict and self.inventory.inventory_dict["arrows"] > 0:
+            # remove an arrow, and create an Arrow object, facing the player's direction
             self.inventory.remove("arrows", 1)
             arrow = Arrow(arrow_image, (32, 32), 15, self.hitbox.x, self.hitbox.y)
             arrow.face_direction(self.direction)
 
-            arrows_list.append(arrow)
-        return arrows_list
+            arrows_list.append(arrow)  # add the arrow to the list
+        return arrows_list             # then return the updated list
 
     def drink_potion(self):
-        """
-        DOC
-        """
+        """Removes a health potion from the player's inventory and replenishes all their health."""
+        # if the player has a health potion in their inventory and the player has lost some health
         if "health potion" in self.inventory.inventory_dict and self.inventory.inventory_dict["health potion"] > 0 \
                 and self.health < self.total_health:
+            # remove a health potion and replenish health
             self.inventory.remove("health potion", 1)
             self.health = self.total_health  # refill the player's health back up to the maximum
-
-    def damage(self, damage):
-        """
-        DOC
-        """
-        self.health -= damage
-        if damage <= 0:
-            self.dead = True
 
     def move(self):
         """
         Moves the player in the appropriate direction based off of the direction attribute, and also aligns the
         sword_swing hitbox.
         """
-
         # move up
         if self.direction == "up":
             self.hitbox.y -= self.move_speed
@@ -435,7 +444,6 @@ class Player:
         Dodges (sort of a teleport) in teh appropriate direction based off of the direction attribute, and also aligns
         the sword_swing hitbox.
         """
-
         # dodge up
         if self.direction == "up":
             self.hitbox.y -= self.dodge_distance
@@ -452,7 +460,7 @@ class Player:
         self.align_sword_swing()  # align the sword_swing hitbox
 
     def step_back(self):
-
+        """Similar to dodge, but only moves back a slight bit to avoid issues with signs and things."""
         # move down
         if self.direction == "up":
             self.hitbox.y += self.move_speed
@@ -498,10 +506,30 @@ class Player:
 
 class Enemy:
     """
-    DOC
+    Creates an enemy that can be melee or ranged; all enemies have spawnpoints, but melee enemies also follow paths.
+
+    Attributes:
+        enemy_type: must be string == "melee" or "ranged"; the type of enemy.
+
+        move_speed: must be int; the move speed of the enemy.
+
+        hitbox_size:  must be tuple of len(2); the width and height of the hitbox.
+        sight_distance: must be int; the length of the enemy's line of sight.
+        sight_width: must be int; the width of the enemy's line of sight.
+
+        direction: must be string in ("up", "down", "left", "right"); the direction the enemy is facing.
+
+        health: must be int; the maximum health of the enemy.
+
+        animations: must be 2 dimensional list with elements of type pygame.Surface; the animation frames for the player.
+
+        spawnpoint:  must be tuple of len(2); the spawnpoint of the enemy.
+        path_point (OPTIONAL): must be tuple of len(2); the default target path point for the enemy.
+
+        sword_swing (OPTIONAL):  must be int; the diameter of the sword_swing hitbox.
     """
     def __init__(self, enemy_type, move_speed, hitbox_size, sight_distance, sight_width, direction, health, animations, spawnpoint, path_point=None, sword_swing=None):
-        """DOC"""
+        """initializes the enemy's attributes"""
         self.enemy_type = enemy_type
 
         self.move_speed = move_speed
@@ -510,7 +538,6 @@ class Enemy:
         self.health = health
         self.dead = False
 
-        # MAY BE AN ISSUE WITH RANGED ENEMIES WITH NO SWORD_SWING
         if sword_swing is not None:
             self.sword_swing = pygame.Rect(0, 0, sword_swing, sword_swing)
             self.swing_x_offset = (self.hitbox.width // 2) - (self.sword_swing.width // 2)
@@ -538,9 +565,8 @@ class Enemy:
             self.calculate_path(self.path_point)
 
     def align_sight(self):
-        """
-        DOC
-        """
+        """Aligns the sight_rect with the center of the enemy hitbox."""
+        # melee enemies will have their sight_rects aligned in with the center of the edge facing their current direciton
         if self.enemy_type == "melee":
             center_x = self.hitbox.x + (self.hitbox.width // 2)
             center_y = self.hitbox.y + (self.hitbox.height // 2)
@@ -569,6 +595,7 @@ class Enemy:
 
                 self.sight_rect = pygame.Rect(self.hitbox.x + self.hitbox.width, center_y - (height // 2), width, height)
 
+        # ranged enemies will have their sight_rects aligned directly with the center of their hitboxes
         elif self.enemy_type == "ranged":
             sight_x_offset = (self.hitbox.width // 2) - (self.sight_width // 2)
             sight_y_offset = (self.hitbox.height // 2) - (self.sight_distance // 2)
@@ -577,15 +604,16 @@ class Enemy:
                                           self.sight_width, self.sight_distance)
 
     def align_sword_swing(self):
-        """
-        DOC
-        """
+        """Aligns the sword_swing hitbox with the center of the enemy."""
         self.sword_swing.x = self.hitbox.x + self.swing_x_offset
         self.sword_swing.y = self.hitbox.y + self.swing_y_offset
 
     def damage(self, damage):
         """
-        DOC
+        Deals a specified amount of damage to the enemy.
+
+        Parameters:
+            damage: must be int; the amount of damage to deal to the enemy.
         """
         self.health -= damage
         if self.health <= 0:
@@ -593,7 +621,10 @@ class Enemy:
 
     def calculate_path(self, target_point):
         """
-        DOC
+        Creates a long list of steps in directions that the enemy has to follow to reach a target point.
+
+        Parameters:
+            target_point: must be tuple of len(2); the target point the enemy needs to get to.
         """
         if self.move_speed > 0:
 
@@ -635,7 +666,11 @@ class Enemy:
 
     def animate(self, stop=None):
         """
-        DOC
+        Advances enemy animation to the next frame.
+
+        Parameters:
+            stop (OPTIONAL): suggested use -- Boolean; when stop is not None, the next frame will always be the first,
+                             starting frame of the current animation.
         """
         # animate normally
         if stop is None and self.move_speed > 0:
@@ -645,7 +680,6 @@ class Enemy:
             # otherwise the end has been reached, so loop back to the beginning
             else:
                 self.current_frame = 0
-
         # stop on first frame
         else:
             self.current_frame = 0
@@ -660,9 +694,7 @@ class Enemy:
             return self.animations[3][self.current_frame]
 
     def move(self):
-        """
-        DOC
-        """
+        """Moves the enemy in the current direction based on it's move speed."""
 
         if self.direction == "up":
             self.hitbox.y -= self.move_speed
@@ -678,16 +710,21 @@ class Enemy:
             self.align_sword_swing()
 
     def follow_path(self):
-        """
-        DOC
-        """
+        """Follows the calculated path."""
+        # if the enemy is currently following a path
         if len(self.path) > 0:
+            # set the current direction to the next step in the path, move in the direction,
+            # then delete the step in the list that was just performed.
             self.direction = self.path[0]
             self.move()
             del self.path[0]
+        # otherwise the enemy needs to calculate a new one
         else:
+            # if the enemy is at a point other than it's spawn, calculate a path back home
             if self.hitbox.x != self.spawnpoint[0] or self.hitbox.y != self.spawnpoint[1]:
                 self.calculate_path(self.spawnpoint)
+            # otherwise the enemy is already home, so if it isn't a ranged enemy, calculate a path
+            # to it's default path point.
             elif self.enemy_type != "ranged":
                 self.calculate_path(self.path_point)
 

@@ -180,13 +180,22 @@ class Level:
 
 
 class HUD:
-    """DOC"""
+    """
+    Creates a HUD used to display the player's stats, quest info, inventory, and even boss health!
 
-    def __init__(self, hud_list, base_rect, inventory_dict, current_item, quest_text, health, boss_health=None):
-        """DOC"""
+    Attributes:
+        hud_list: must be a list with elements of type pygame.Surface; all the image assets to display on the HUD.
+        inventory_dict: must be the inventory_dict from a Player.Inventory object; the player's inventory.
+        current_item: must be string (from a Player.Inventory object); the player's currently equipped item.
+        quest_text: must be string; the quest text to display on the right of the HUD to the player.
+        health: must be int (from a Player object); the player's health.
+        boss_health (OPTIONAL): must be int (from an Enemy object); the boss' health.
+    """
+
+    def __init__(self, hud_list, inventory_dict, current_item, quest_text, health, boss_health=None):
+        """Initializes all attributes of the HUD class"""
 
         self.hud_list = hud_list
-        self.base_rect = base_rect
         self.inventory_dict = inventory_dict
         self.current_item = current_item
         self.quest_text = quest_text
@@ -194,23 +203,43 @@ class HUD:
         self.boss_health = boss_health
 
     def update(self, player, boss=None):
+        """
+        Updates the info on the HUD.
+
+        Parameters:
+            player: must be a Player object; the player.
+            boss (OPTIONAL): must be an Enemy object; the boss
+
+        Returns: (none)
+        """
         self.inventory_dict = player.inventory.inventory_dict
         self.current_item = player.inventory.current_item
         self.health = player.health
 
         if boss is not None:
             self.boss_health = boss.health
+        else:
+            self.boss_health = 0
 
     def draw(self, screen, coordinates):
-        """DOC"""
+        """
+        Draws all elements of the HUD to the screen.
 
+        Parameters:
+            screen: must be of type pygame.Surface; the screen to draw to.
+            coordinates: must be tuple of len(2); the x and y coordinates to draw the HUD to.
 
-        font = pygame.font.SysFont("calibri", 22, True)
+        Returns: (none)
+        """
+        font = pygame.font.SysFont("calibri", 22, True)  # set up the font for text
 
-        screen.blit(self.hud_list[0], coordinates)
+        # BASE
+        screen.blit(self.hud_list[0], coordinates)  # blit the base image
 
+        # INVENTORY
+        # go through all the items in the player's inventory
         for item in range(len(self.inventory_dict)):
-
+            # get the name and amount of each item
             item_name = list(self.inventory_dict.keys())[item]
             item_amount = list(self.inventory_dict.values())[item]
 
@@ -225,30 +254,35 @@ class HUD:
                 image = self.hud_list[4]
             elif item_name == "gold":
                 image = self.hud_list[5]
-
+            # calculate the coordinates to draw each item at
             x = (coordinates[0] + 10) + (160 * item)
             y = coordinates[1] + 30
 
-            screen.blit(image, (x, y))
+            screen.blit(image, (x, y))  # blit the item in the inventory
 
+            # all items other than the sword and bow have numbers corresponding to their amount
             if not item_name in ("sword", "bow"):
-                current_number = font.render(str(item_amount), True, (0, 0, 0))
+                current_number = font.render(str(item_amount), True, (0, 0, 0))  # get the amount
+                x_offset = (13 * (len(str(item_amount)) - 1)) + 30               # calculate the text offset based on digits
+                screen.blit(current_number, (x + 160 - x_offset, y + 120))       # blit the amount
 
-                x_offset = (13 * (len(str(item_amount)) - 1)) + 30
-                screen.blit(current_number, (x + 160 - x_offset, y + 120))
-
+            # if the item is the player's currently equipped item, also blit the red highlighting around the border
             if list(self.inventory_dict.keys())[item] == self.current_item:
                 screen.blit(self.hud_list[6], (x, y))
 
+        # HEALTH
+        # draw the player hearts
         for heart in range(self.health):
             x_offset = 32 * heart
             screen.blit(self.hud_list[7], (coordinates[0] + (820 + x_offset), coordinates[1] + 30))
-
+        # draw the boss hearts if specified
         if self.boss_health is not None:
             for boss_heart in range(self.boss_health):
                 x_offset = 32 * boss_heart
                 screen.blit(self.hud_list[8], (coordinates[0] + (820 + x_offset), coordinates[1] + 65))
 
+        # TEXT
+        # blit the quest text
         for line in range(len(self.quest_text)):
             text = font.render(self.quest_text[line], True, (0, 0, 0))
             screen.blit(text, (coordinates[0] + 820, (coordinates[1] + 110) + (20 * line)))
